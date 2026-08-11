@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دليل مطور Flutter · مِشوارَك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --primary: #00A651;
+    --primary-dark: #008A44;
+    --accent: #FFC300;
+    --danger: #EF4444;
+    --bg: #0A0E1A;
+    --surface: #141826;
+    --surface-elev: #1C2233;
+    --border: #252B3B;
+    --text: #F5F7FA;
+    --text-muted: #9AA3B2;
+    --text-light: #6B7280;
+    --code-bg: #0d1117;
+    --code-border: #21262d;
+    --flutter: #02569B;
+    --dart: #0175C2;
+  }
+  body, html {
+    margin: 0; padding: 0;
+    font-family: 'IBM Plex Sans Arabic', -apple-system, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre { font-family: 'JetBrains Mono', 'SF Mono', monospace; direction: ltr; text-align: left; }
+
+  /* ═══ Layout ═══ */
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+
+  /* ═══ Hero ═══ */
+  .hero {
+    padding: 80px 24px 60px;
+    background: radial-gradient(ellipse at top, rgba(0,166,81,0.15) 0%, transparent 60%),
+                linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; background: rgba(2, 86, 155, 0.15);
+    border: 1px solid rgba(2, 86, 155, 0.3);
+    color: #4FC3F7; border-radius: 20px;
+    font-size: 12px; font-weight: 700; margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: 48px; font-weight: 900; margin: 0 0 12px;
+    background: linear-gradient(135deg, var(--text) 0%, var(--primary) 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -1.5px;
+  }
+  .hero p {
+    font-size: 18px; color: var(--text-muted);
+    max-width: 700px; margin: 0 auto 24px;
+  }
+  .hero-stats {
+    display: flex; justify-content: center; gap: 32px; margin-top: 32px;
+    flex-wrap: wrap;
+  }
+  .stat { text-align: center; }
+  .stat-num { font-size: 32px; font-weight: 900; color: var(--primary); font-family: 'JetBrains Mono'; }
+  .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+
+  /* ═══ Sections ═══ */
+  section { padding: 60px 0; border-bottom: 1px solid var(--border); }
+  section:last-child { border-bottom: none; }
+  .section-header { text-align: center; margin-bottom: 48px; }
+  .section-tag {
+    display: inline-block; padding: 4px 12px;
+    background: var(--surface-elev); color: var(--primary);
+    border-radius: 12px; font-size: 11px; font-weight: 800;
+    letter-spacing: 0.5px; margin-bottom: 12px;
+  }
+  h2 { font-size: 34px; font-weight: 800; margin: 0 0 12px; letter-spacing: -0.8px; }
+  h3 { font-size: 22px; font-weight: 700; margin: 32px 0 12px; }
+  h4 { font-size: 16px; font-weight: 700; margin: 20px 0 8px; }
+  p { color: var(--text-muted); margin: 0 0 12px; }
+
+  /* ═══ Cards ═══ */
+  .grid { display: grid; gap: 16px; }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px;
+    transition: all 0.3s;
+  }
+  .card:hover { border-color: rgba(0,166,81,0.3); transform: translateY(-2px); }
+  .card-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,166,81,0.15); color: var(--primary);
+    font-size: 24px; margin-bottom: 16px;
+  }
+  .card h4 { margin-top: 0; color: var(--text); }
+  .card p { margin: 0; font-size: 13px; line-height: 1.6; }
+  .card ul { margin: 12px 0 0; padding: 0; list-style: none; }
+  .card ul li {
+    padding: 6px 0; font-size: 13px; color: var(--text-muted);
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .card ul li::before {
+    content: '›'; color: var(--primary); font-weight: 700;
+    flex-shrink: 0; margin-top: -2px; font-size: 16px;
+  }
+
+  /* ═══ Code Blocks ═══ */
+  .code-block {
+    background: var(--code-bg); border: 1px solid var(--code-border);
+    border-radius: 12px; overflow: hidden; margin: 16px 0;
+  }
+  .code-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid var(--code-border);
+  }
+  .code-file {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--text-muted); display: flex; align-items: center; gap: 8px;
+  }
+  .code-file .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dart); }
+  .code-lang {
+    font-size: 10px; font-weight: 700; padding: 3px 8px;
+    background: rgba(1,117,194,0.15); color: #4FC3F7;
+    border-radius: 8px; text-transform: uppercase;
+  }
+  pre {
+    margin: 0; padding: 16px 20px; overflow-x: auto;
+    font-size: 13px; line-height: 1.6; color: #c9d1d9;
+  }
+  /* Dart syntax highlighting */
+  .kw { color: #ff7b72; }
+  .str { color: #a5d6ff; }
+  .cmt { color: #8b949e; font-style: italic; }
+  .cls { color: #ffa657; }
+  .fn { color: #d2a8ff; }
+  .num { color: #79c0ff; }
+  .anno { color: #ffa657; }
+
+  /* ═══ Architecture Diagram ═══ */
+  .arch {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 32px; margin: 32px 0;
+    display: grid; grid-template-columns: 1fr; gap: 12px;
+  }
+  .arch-layer {
+    padding: 16px 20px; border-radius: 12px;
+    display: flex; align-items: center; gap: 16px;
+    border: 1px solid var(--border);
+  }
+  .arch-layer.presentation { background: rgba(2, 86, 155, 0.1); border-color: rgba(2, 86, 155, 0.3); }
+  .arch-layer.state { background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3); }
+  .arch-layer.domain { background: rgba(0, 166, 81, 0.1); border-color: rgba(0, 166, 81, 0.3); }
+  .arch-layer.data { background: rgba(255, 195, 0, 0.1); border-color: rgba(255, 195, 0, 0.3); }
+  .arch-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .arch-title { font-weight: 700; margin-bottom: 2px; }
+  .arch-desc { font-size: 12px; color: var(--text-muted); }
+  .arch-arrow {
+    text-align: center; color: var(--text-light);
+    font-size: 20px; padding: 4px 0;
+  }
+
+  /* ═══ File Tree ═══ */
+  .tree {
+    background: var(--code-bg); border: 1px solid var(--code-border);
+    border-radius: 12px; padding: 20px 24px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: #c9d1d9; line-height: 1.8; direction: ltr; text-align: left;
+    overflow-x: auto;
+  }
+  .tree .folder { color: #58a6ff; }
+  .tree .file { color: #c9d1d9; }
+  .tree .comment { color: #8b949e; font-style: italic; }
+
+  /* ═══ Package Table ═══ */
+  .pkg-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;
+  }
+  .pkg {
+    padding: 14px 16px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px;
+  }
+  .pkg-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .pkg-name { font-family: 'JetBrains Mono'; font-size: 13px; font-weight: 700; color: #4FC3F7; }
+  .pkg-ver { font-size: 11px; color: var(--text-light); font-family: 'JetBrains Mono'; }
+  .pkg-desc { font-size: 12px; color: var(--text-muted); }
+  .pkg-cat {
+    display: inline-block; padding: 2px 8px; border-radius: 6px;
+    font-size: 9px; font-weight: 800; letter-spacing: 0.5px;
+    margin-bottom: 8px; text-transform: uppercase;
+  }
+  .cat-state { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+  .cat-nav { background: rgba(2, 86, 155, 0.15); color: #4FC3F7; }
+  .cat-net { background: rgba(255, 195, 0, 0.15); color: var(--accent); }
+  .cat-map { background: rgba(0, 166, 81, 0.15); color: var(--primary); }
+  .cat-ui { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
+  .cat-auth { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+  .cat-store { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+
+  /* ═══ Steps ═══ */
+  .steps { display: grid; gap: 12px; margin: 24px 0; }
+  .step {
+    display: flex; gap: 16px; padding: 16px 20px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .step-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--primary); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; flex-shrink: 0;
+  }
+  .step-body h4 { margin: 0 0 4px; }
+  .step-body p { margin: 0; font-size: 13px; }
+
+  /* ═══ Tabs ═══ */
+  .tabs {
+    display: flex; gap: 4px; margin: 24px 0 0;
+    border-bottom: 1px solid var(--border); padding-bottom: 0;
+  }
+  .tab {
+    padding: 10px 16px; background: transparent; border: none;
+    color: var(--text-muted); font-weight: 600; cursor: pointer;
+    font-family: inherit; font-size: 13px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab:hover:not(.active) { color: var(--text); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ═══ Callouts ═══ */
+  .callout {
+    padding: 16px 20px; border-radius: 12px;
+    border-inline-start: 4px solid var(--primary);
+    background: rgba(0, 166, 81, 0.08);
+    margin: 16px 0;
+  }
+  .callout.warn {
+    border-color: var(--accent);
+    background: rgba(255, 195, 0, 0.08);
+  }
+  .callout.danger {
+    border-color: var(--danger);
+    background: rgba(239, 68, 68, 0.08);
+  }
+  .callout-title {
+    font-weight: 700; font-size: 13px; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .callout p { margin: 0; font-size: 13px; color: var(--text); }
+
+  /* ═══ Timeline ═══ */
+  .timeline { position: relative; padding-inline-start: 32px; margin: 24px 0; }
+  .timeline::before {
+    content: ''; position: absolute; inset-inline-start: 12px; top: 0; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .tl-item { position: relative; padding-bottom: 24px; }
+  .tl-item::before {
+    content: ''; position: absolute; inset-inline-start: -27px; top: 6px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--primary); border: 3px solid var(--bg);
+    box-shadow: 0 0 0 3px var(--primary);
+  }
+  .tl-week {
+    display: inline-block; padding: 2px 8px; border-radius: 6px;
+    background: var(--surface-elev); font-size: 11px; font-weight: 700;
+    color: var(--primary); margin-bottom: 6px;
+    font-family: 'JetBrains Mono';
+  }
+  .tl-item h4 { margin: 0 0 4px; }
+  .tl-item p { margin: 0; font-size: 13px; }
+
+  /* ═══ CTA ═══ */
+  .cta {
+    text-align: center; padding: 60px 24px;
+    background: linear-gradient(135deg, rgba(0,166,81,0.15), rgba(0,138,68,0.1));
+    border-radius: 24px; margin: 40px 0;
+    border: 1px solid rgba(0,166,81,0.3);
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 24px; background: var(--primary); color: white;
+    border: none; border-radius: 14px; cursor: pointer;
+    font-family: inherit; font-size: 14px; font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 8px 24px rgba(0,166,81,0.3);
+    transition: all 0.2s;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,166,81,0.4); }
+  .btn.secondary {
+    background: var(--surface); color: var(--text);
+    box-shadow: none; border: 1px solid var(--border);
+  }
+  .btn-group { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+  /* ═══ TOC ═══ */
+  .toc {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    justify-content: center; padding: 20px 0;
+    background: var(--surface); border-radius: 16px;
+    margin-bottom: 40px;
+  }
+  .toc a {
+    padding: 8px 14px; background: var(--surface-elev);
+    color: var(--text-muted); text-decoration: none;
+    border-radius: 20px; font-size: 12px; font-weight: 600;
+    transition: all 0.2s;
+    border: 1px solid var(--border);
+  }
+  .toc a:hover {
+    background: var(--primary); color: white; border-color: var(--primary);
+  }
+
+  /* Mobile */
+  @media (max-width: 768px) {
+    h1 { font-size: 32px !important; }
+    h2 { font-size: 24px; }
+    .hero { padding: 60px 20px 40px; }
+    .container { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ HERO ═══════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-badge">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="#4FC3F7"><path d="M14.314 0L2.3 12 6 15.7 21.684.013h-7.357zm.014 11.072L7.857 17.53l6.457 6.47H21.7l-6.46-6.468 6.46-6.46h-7.37z"/></svg>
+    Flutter & Dart · Developer Guide
+  </div>
+  <h1>مِشوارَك · دليل المطور</h1>
+  <p>
+    دليل تقني شامل لبناء تطبيق مِشوارَك باستخدام Flutter — من إعداد المشروع
+    إلى النشر على المتاجر. مبني على أفضل الممارسات الحديثة.
+  </p>
+  <div class="btn-group" style="margin-top:8px">
+    <a href="Mishwarak.html" class="btn secondary">← رجوع للتصميم</a>
+    <a href="#quick-start" class="btn">ابدأ الآن ↓</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">13</div><div class="stat-label">شاشة</div></div>
+    <div class="stat"><div class="stat-num">25+</div><div class="stat-label">حزمة</div></div>
+    <div class="stat"><div class="stat-num">4</div><div class="stat-label">طبقات</div></div>
+    <div class="stat"><div class="stat-num">Ar/En</div><div class="stat-label">لغتين</div></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ═══════════════ TOC ═══════════════ -->
+  <div class="toc">
+    <a href="#overview">نظرة عامة</a>
+    <a href="#architecture">المعمارية</a>
+    <a href="#quick-start">البدء السريع</a>
+    <a href="#file-structure">هيكل الملفات</a>
+    <a href="#packages">الحزم</a>
+    <a href="#theme">الثيم والألوان</a>
+    <a href="#code-samples">أمثلة الكود</a>
+    <a href="#backend">Backend</a>
+    <a href="#roadmap">خارطة الطريق</a>
+    <a href="#checklist">قائمة النشر</a>
+  </div>
+
+  <!-- ═══════════════ OVERVIEW ═══════════════ -->
+  <section id="overview">
+    <div class="section-header">
+      <span class="section-tag">01 · Overview</span>
+      <h2>نظرة عامة على المشروع</h2>
+      <p>مِشوارَك هو تطبيق توصيل ركاب متخصص لمدينة عدن، اليمن.</p>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="card-icon">📱</div>
+        <h4>Cross-platform</h4>
+        <p>iOS + Android من نفس الـ codebase مع Flutter 3.19+</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <h4>Bilingual + RTL</h4>
+        <p>دعم كامل للعربية (RTL) والإنجليزية (LTR) مع تبديل فوري</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌓</div>
+        <h4>Dark/Light Mode</h4>
+        <p>ثيمان مصمّمان بعناية مع تبديل تلقائي حسب النظام</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗺️</div>
+        <h4>Google Maps</h4>
+        <p>تتبع مباشر للسائق + رسم مسارات + حساب المسافة</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔐</div>
+        <h4>Firebase Auth</h4>
+        <p>مصادقة برقم الجوال + OTP · حماية عالية للحسابات</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💳</div>
+        <h4>Multi-payment</h4>
+        <p>نقدي، بطاقة، محفظة رقمية، ونقاط مكافآت</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ ARCHITECTURE ═══════════════ -->
+  <section id="architecture">
+    <div class="section-header">
+      <span class="section-tag">02 · Architecture</span>
+      <h2>معمارية التطبيق</h2>
+      <p>نتبع نمط <strong style="color:var(--primary)">Clean Architecture</strong> مع Feature-first structure</p>
+    </div>
+
+    <div class="arch">
+      <div class="arch-layer presentation">
+        <div class="arch-icon">🎨</div>
+        <div>
+          <div class="arch-title">1. Presentation Layer — الواجهة</div>
+          <div class="arch-desc">Screens · Widgets · Themes — كل شيء يراه المستخدم</div>
+        </div>
+      </div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-layer state">
+        <div class="arch-icon">⚡</div>
+        <div>
+          <div class="arch-title">2. State Layer — إدارة الحالة</div>
+          <div class="arch-desc">Riverpod Providers · State Notifiers — منطق الشاشات</div>
+        </div>
+      </div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-layer domain">
+        <div class="arch-icon">🧠</div>
+        <div>
+          <div class="arch-title">3. Domain Layer — منطق الأعمال</div>
+          <div class="arch-desc">Models · Use Cases · Repositories interfaces — قواعد التطبيق</div>
+        </div>
+      </div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-layer data">
+        <div class="arch-icon">💾</div>
+        <div>
+          <div class="arch-title">4. Data Layer — البيانات</div>
+          <div class="arch-desc">API Services · Local Storage · Firebase — مصادر البيانات</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">💡 لماذا هذه المعمارية؟</div>
+      <p>
+        فصل واضح للمسؤوليات، سهولة اختبار كل طبقة على حدة،
+        سهولة استبدال أي طبقة (مثلاً تغيير Firebase إلى backend مخصص)،
+        وإمكانية توسيع الفريق بأمان.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ QUICK START ═══════════════ -->
+  <section id="quick-start">
+    <div class="section-header">
+      <span class="section-tag">03 · Quick Start</span>
+      <h2>البدء السريع</h2>
+      <p>خطوات إعداد المشروع في أقل من 10 دقائق</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>ثبّت Flutter SDK</h4>
+          <p>تحقق من الإصدار: <code>flutter --version</code> — يجب أن يكون 3.19+</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>أنشئ مشروع جديد</h4>
+          <div class="code-block">
+            <pre><span class="cmt"># إنشاء مشروع Flutter مع دعم iOS + Android</span>
+flutter create --org com.mishwarak --project-name mishwarak mishwarak
+cd mishwarak</pre>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>انسخ ملف pubspec.yaml من هذا الدليل</h4>
+          <p>يحتوي على كل الحزم المطلوبة، ثم شغّل:</p>
+          <div class="code-block">
+            <pre>flutter pub get</pre>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>أنشئ مشروع Firebase</h4>
+          <p>
+            من <a href="https://console.firebase.google.com" style="color:var(--primary)" target="_blank">Firebase Console</a>
+            → أضف iOS + Android app → نزّل <code>google-services.json</code> و <code>GoogleService-Info.plist</code>
+          </p>
+          <div class="code-block">
+            <pre><span class="cmt"># استخدام FlutterFire CLI للإعداد التلقائي</span>
+dart pub global activate flutterfire_cli
+flutterfire configure</pre>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h4>احصل على مفتاح Google Maps</h4>
+          <p>
+            من <a href="https://console.cloud.google.com" style="color:var(--primary)" target="_blank">Google Cloud Console</a>
+            → فعّل Maps SDK for Android + iOS → أنشئ API Key
+          </p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <h4>شغّل التطبيق!</h4>
+          <div class="code-block">
+            <pre>flutter run</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ FILE STRUCTURE ═══════════════ -->
+  <section id="file-structure">
+    <div class="section-header">
+      <span class="section-tag">04 · Structure</span>
+      <h2>هيكل الملفات</h2>
+      <p>تنظيم Feature-first مع طبقات Clean Architecture</p>
+    </div>
+
+    <div class="tree">
+<span class="folder">mishwarak/</span>
+├── <span class="folder">lib/</span>
+│   ├── <span class="file">main.dart</span>                          <span class="comment"># ← نقطة الدخول</span>
+│   ├── <span class="file">firebase_options.dart</span>              <span class="comment"># Firebase config</span>
+│   │
+│   ├── <span class="folder">core/</span>                             <span class="comment"># مشترك بين كل الميزات</span>
+│   │   ├── <span class="folder">theme/</span>
+│   │   │   ├── <span class="file">app_colors.dart</span>            <span class="comment"># ألوان النسختين A + B</span>
+│   │   │   ├── <span class="file">app_theme.dart</span>             <span class="comment"># ThemeData (Light + Dark)</span>
+│   │   │   └── <span class="file">app_typography.dart</span>        <span class="comment"># TextStyles</span>
+│   │   ├── <span class="folder">router/</span>
+│   │   │   └── <span class="file">app_router.dart</span>            <span class="comment"># go_router config</span>
+│   │   ├── <span class="folder">providers/</span>
+│   │   │   ├── <span class="file">theme_provider.dart</span>        <span class="comment"># Riverpod: theme mode</span>
+│   │   │   ├── <span class="file">locale_provider.dart</span>       <span class="comment"># Riverpod: language</span>
+│   │   │   └── <span class="file">auth_provider.dart</span>
+│   │   ├── <span class="folder">network/</span>
+│   │   │   ├── <span class="file">api_client.dart</span>            <span class="comment"># Dio + interceptors</span>
+│   │   │   └── <span class="file">api_endpoints.dart</span>
+│   │   ├── <span class="folder">services/</span>
+│   │   │   ├── <span class="file">location_service.dart</span>
+│   │   │   ├── <span class="file">notification_service.dart</span>
+│   │   │   └── <span class="file">socket_service.dart</span>        <span class="comment"># Real-time tracking</span>
+│   │   └── <span class="folder">utils/</span>
+│   │       ├── <span class="file">formatters.dart</span>
+│   │       └── <span class="file">validators.dart</span>
+│   │
+│   ├── <span class="folder">features/</span>                         <span class="comment"># كل ميزة ملف مستقل</span>
+│   │   ├── <span class="folder">splash/</span>
+│   │   │   └── <span class="file">splash_screen.dart</span>
+│   │   ├── <span class="folder">onboarding/</span>
+│   │   │   └── <span class="file">onboarding_screen.dart</span>
+│   │   ├── <span class="folder">auth/</span>
+│   │   │   ├── <span class="file">login_screen.dart</span>
+│   │   │   ├── <span class="file">otp_screen.dart</span>
+│   │   │   └── <span class="folder">providers/</span>
+│   │   │       └── <span class="file">auth_notifier.dart</span>
+│   │   ├── <span class="folder">home/</span>
+│   │   │   ├── <span class="file">home_screen.dart</span>
+│   │   │   └── <span class="folder">widgets/</span>
+│   │   │       ├── <span class="file">home_drawer.dart</span>
+│   │   │       └── <span class="file">home_bottom_sheet.dart</span>
+│   │   ├── <span class="folder">search/</span>
+│   │   │   └── <span class="file">search_screen.dart</span>
+│   │   ├── <span class="folder">booking/</span>
+│   │   │   ├── <span class="file">vehicle_selection_screen.dart</span>
+│   │   │   ├── <span class="file">finding_driver_screen.dart</span>
+│   │   │   ├── <span class="folder">models/</span>
+│   │   │   │   └── <span class="file">vehicle_type.dart</span>
+│   │   │   └── <span class="folder">repositories/</span>
+│   │   │       └── <span class="file">booking_repository.dart</span>
+│   │   ├── <span class="folder">ride/</span>
+│   │   │   ├── <span class="file">active_ride_screen.dart</span>
+│   │   │   ├── <span class="file">rating_screen.dart</span>
+│   │   │   └── <span class="folder">models/</span>
+│   │   │       └── <span class="file">driver.dart</span>
+│   │   ├── <span class="folder">wallet/</span>
+│   │   │   └── <span class="file">wallet_screen.dart</span>
+│   │   ├── <span class="folder">history/</span>
+│   │   │   └── <span class="file">history_screen.dart</span>
+│   │   ├── <span class="folder">profile/</span>
+│   │   │   └── <span class="file">profile_screen.dart</span>
+│   │   └── <span class="folder">notifications/</span>
+│   │       └── <span class="file">notifications_screen.dart</span>
+│   │
+│   ├── <span class="folder">shared/</span>                           <span class="comment"># Widgets قابلة لإعادة الاستخدام</span>
+│   │   ├── <span class="folder">widgets/</span>
+│   │   │   ├── <span class="file">glass_button.dart</span>
+│   │   │   ├── <span class="file">saved_place_card.dart</span>
+│   │   │   ├── <span class="file">service_shortcut.dart</span>
+│   │   │   ├── <span class="file">driver_avatar.dart</span>
+│   │   │   └── <span class="file">star_rating.dart</span>
+│   │   └── <span class="folder">constants/</span>
+│   │       └── <span class="file">app_constants.dart</span>
+│   │
+│   └── <span class="folder">l10n/</span>                              <span class="comment"># الترجمات</span>
+│       ├── <span class="file">app_ar.arb</span>                     <span class="comment"># عربي</span>
+│       └── <span class="file">app_en.arb</span>                     <span class="comment"># إنجليزي</span>
+│
+├── <span class="folder">assets/</span>
+│   ├── <span class="folder">images/</span>
+│   ├── <span class="folder">icons/</span>
+│   ├── <span class="folder">fonts/</span>
+│   └── <span class="folder">animations/</span>                       <span class="comment"># Lottie files</span>
+│
+├── <span class="folder">test/</span>                                  <span class="comment"># Unit + widget tests</span>
+├── <span class="file">pubspec.yaml</span>
+└── <span class="file">README.md</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════ PACKAGES ═══════════════ -->
+  <section id="packages">
+    <div class="section-header">
+      <span class="section-tag">05 · Dependencies</span>
+      <h2>الحزم المستخدمة</h2>
+      <p>مختارة بعناية — كل حزمة لها سبب واضح</p>
+    </div>
+
+    <div class="pkg-grid">
+      <div class="pkg">
+        <div class="pkg-cat cat-state">إدارة الحالة</div>
+        <div class="pkg-head">
+          <span class="pkg-name">flutter_riverpod</span>
+          <span class="pkg-ver">^2.5.1</span>
+        </div>
+        <div class="pkg-desc">إدارة حالة حديثة، type-safe، سهلة الاختبار — الخيار الأول للمشاريع الجديدة</div>
+      </div>
+
+      <div class="pkg">
+        <div class="pkg-cat cat-nav">التنقل</div>
+        <div class="pkg-head">
+          <span class="pkg-name">go_router</span>
+          <span class="pkg-ver">^14.2.0</span>
+        </div>
+        <div class="pkg-desc">Declarative routing من فريق Flutter الرسمي — يدعم deep linking تلقائياً</div>
+      </div>
+
+      <div class="pkg">
+        <div class="pkg-cat cat-net">الشبكة</div>
+        <div class="pkg-head">
+          <span class="pkg-name">dio</span>
+          <span class="pkg-ver">^5.4.3</span>
+        </div>
+        <div class="pkg-desc">HTTP client قوي مع interceptors، cancel tokens، وrefresh tokens</div>
+      </div>
+
+      <div class="pkg">
+        <div class="pkg-cat cat-net">API</div>
+        <div class="pkg-head">
+          <span class="pkg-name">retrofit</span>
+          <span class="pkg-ver">^4.1.0</span>
+        </div>
+        <div class="pkg-desc">توليد كود REST API تلقائياً بأسلوب type-safe (مثل Retrofit في أندرويد)</div>
+      </div>
+
+      <div class="pkg">
+        <div class="pkg-cat cat-map">الخرائط</div>
+        <div class="pkg-head">
+          <span class="pkg-name">google_maps_flutter</span>
+          <span class="pkg-ver">^2.7.0</span>
+        </div>
+        <div class="pkg-desc">Google Maps الرسمية — تدعم markers, polylines, camera animation</div>
+      </div>
+
+      <div class="pkg">
+        <div class="pkg-cat cat-map">الموقع</div>
+        <div class="pkg-head">
+          <span class="pkg-name">geolocator</span>
+          <span class="pkg-ver">^12.0.0</span>
+        </div>
+        <div class="pkg-desc">GPS location مع stream للتحديث المستمر — يدعم background tracking</div>
+      </div>
+
+      <div class="pkg">
+        <div class="pkg-cat cat-map">Real-time</div>
+        <div class="pkg-head">
+          <span class="pkg-name">socket_io_client</span>
+          <span class="pkg-ver">^2.0.3</span>
+        </div>
+        <div class="pkg-desc">اتصال Socket.io للتحديثات الحية (موقع السائق، الرسائل)</div>
+      </div>
+
+      <div class="pkg">
+        <div class="pkg-cat cat-auth">المصادقة</div>
+        <div class="pkg-head">
+          <span class="pkg-name">firebase_auth</span>
+          <span class="pkg-ver">^5.1.0</span>
+        </div>
+        <div class="pkg-desc">OTP للجوال + إدارة الحسابات — مجاني لأول 10K مستخدم</div>
+      </div>
+
+      <div class="pkg">
+        <div class="pkg-cat cat-auth">Push</div>
+        <div class="pkg-head">
+          <span class="pkg-name">firebase_messaging</span>
+          <span class="pkg-ver">^15.0.1</span>
+        </div>
+        <div class="pkg-desc">إشعارات push للطلبات الجديدة، تحديث الرحلات، والعروض</div>
+      </div>
+
+      <div class="pkg">
+        <div class="pkg-cat cat-store">تخزين آمن</div>
+        <div class="pkg-head">
+          <span class="pkg-name">flutter_secure_storage</span>
+          <span class="pkg-ver">^9.2.2</span>
+        </div>
+        <div class="pkg-desc">لحفظ auth tokens بأمان (Keychain في iOS، Keystore في Android)</div>
+      </div>
+
+      <div class="pkg">
+        <div class="pkg-cat cat-store">قاعدة بيانات</div>
+        <div class="pkg-head">
+          <span class="pkg-name">hive_flutter</span>
+          <span class="pkg-ver">^1.1.0</span>
+        </div>
+        <div class="pkg-desc">قاعدة بيانات NoSQL سريعة جداً — أسرع من SQLite</div>
+      </div>
+
+      <div class="pkg">
+        <div class="pkg-cat cat-ui">خطوط</div>
+        <div class="pkg-head">
+          <span class="pkg-name">google_fonts</span>
+          <span class="pkg-ver">^6.2.1</span>
+        </div>
+        <div class="pkg-desc">تحميل خطوط Google تلقائياً — نستخدم IBM Plex Sans Arabic</div>
+      </div>
+
+      <div class="pkg">
+        <div class="pkg-cat cat-ui">Animations</div>
+        <div class="pkg-head">
+          <span class="pkg-name">lottie</span>
+          <span class="pkg-ver">^3.1.2</span>
+        </div>
+        <div class="pkg-desc">تشغيل ملفات Lottie لأنيميشن احترافي (مثل شاشة البحث عن سائق)</div>
+      </div>
+
+      <div class="pkg">
+        <div class="pkg-cat cat-ui">Skeleton</div>
+        <div class="pkg-head">
+          <span class="pkg-name">shimmer</span>
+          <span class="pkg-ver">^3.0.0</span>
+        </div>
+        <div class="pkg-desc">Loading placeholders أنيقة أثناء تحميل البيانات</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ CODE SAMPLES ═══════════════ -->
+  <section id="code-samples">
+    <div class="section-header">
+      <span class="section-tag">06 · Code Examples</span>
+      <h2>أمثلة الكود</h2>
+      <p>كل الكود جاهز للاستخدام — نُسخ ملفات فعلية من المشروع</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('t-main')">main.dart</button>
+      <button class="tab" onclick="showTab('t-colors')">app_colors</button>
+      <button class="tab" onclick="showTab('t-theme')">app_theme</button>
+      <button class="tab" onclick="showTab('t-router')">app_router</button>
+      <button class="tab" onclick="showTab('t-home')">home_screen</button>
+      <button class="tab" onclick="showTab('t-provider')">Provider</button>
+      <button class="tab" onclick="showTab('t-model')">Model</button>
+    </div>
+
+    <!-- main.dart -->
+    <div class="tab-panel active" id="t-main">
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-file"><span class="dot"></span>lib/main.dart</span>
+          <span class="code-lang">dart</span>
+        </div>
+        <pre><span class="kw">import</span> <span class="str">'package:flutter/material.dart'</span>;
+<span class="kw">import</span> <span class="str">'package:flutter_riverpod/flutter_riverpod.dart'</span>;
+<span class="kw">import</span> <span class="str">'package:firebase_core/firebase_core.dart'</span>;
+<span class="kw">import</span> <span class="str">'core/theme/app_theme.dart'</span>;
+<span class="kw">import</span> <span class="str">'core/router/app_router.dart'</span>;
+
+<span class="kw">Future&lt;void&gt;</span> <span class="fn">main</span>() <span class="kw">async</span> {
+  WidgetsFlutterBinding.<span class="fn">ensureInitialized</span>();
+
+  <span class="cmt">// تهيئة Firebase</span>
+  <span class="kw">await</span> Firebase.<span class="fn">initializeApp</span>();
+
+  <span class="cmt">// قفل التطبيق على وضع Portrait</span>
+  <span class="kw">await</span> SystemChrome.<span class="fn">setPreferredOrientations</span>([
+    DeviceOrientation.portraitUp,
+  ]);
+
+  <span class="fn">runApp</span>(<span class="kw">const</span> <span class="cls">ProviderScope</span>(child: <span class="cls">MishwarakApp</span>()));
+}
+
+<span class="kw">class</span> <span class="cls">MishwarakApp</span> <span class="kw">extends</span> <span class="cls">ConsumerWidget</span> {
+  <span class="kw">const</span> <span class="fn">MishwarakApp</span>({<span class="kw">super</span>.key});
+
+  <span class="anno">@override</span>
+  <span class="cls">Widget</span> <span class="fn">build</span>(<span class="cls">BuildContext</span> context, <span class="cls">WidgetRef</span> ref) {
+    <span class="kw">final</span> locale = ref.<span class="fn">watch</span>(localeProvider);
+    <span class="kw">final</span> themeMode = ref.<span class="fn">watch</span>(themeModeProvider);
+    <span class="kw">final</span> router = ref.<span class="fn">watch</span>(appRouterProvider);
+
+    <span class="kw">return</span> <span class="cls">MaterialApp</span>.router(
+      title: <span class="str">'مِشوارَك'</span>,
+      debugShowCheckedModeBanner: <span class="kw">false</span>,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeMode,
+      locale: locale,
+      supportedLocales: <span class="kw">const</span> [
+        <span class="cls">Locale</span>(<span class="str">'ar'</span>, <span class="str">'YE'</span>),
+        <span class="cls">Locale</span>(<span class="str">'en'</span>, <span class="str">'US'</span>),
+      ],
+      routerConfig: router,
+    );
+  }
+}</pre>
+      </div>
+    </div>
+
+    <!-- app_colors -->
+    <div class="tab-panel" id="t-colors">
+      <p style="margin-top:16px">نظام ألوان موحّد يستخدم <code>const Color</code> للأداء الأمثل:</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-file"><span class="dot"></span>lib/core/theme/app_colors.dart</span>
+          <span class="code-lang">dart</span>
+        </div>
+        <pre><span class="kw">import</span> <span class="str">'package:flutter/material.dart'</span>;
+
+<span class="kw">class</span> <span class="cls">MishwarakColors</span> {
+  <span class="cls">MishwarakColors</span>._();
+
+  <span class="cmt">// ─── Primary Palette ───</span>
+  <span class="kw">static const</span> <span class="cls">Color</span> primary = <span class="cls">Color</span>(<span class="num">0xFF00A651</span>);
+  <span class="kw">static const</span> <span class="cls">Color</span> primaryDark = <span class="cls">Color</span>(<span class="num">0xFF008A44</span>);
+  <span class="kw">static const</span> <span class="cls">Color</span> primaryLight = <span class="cls">Color</span>(<span class="num">0xFF00C853</span>);
+
+  <span class="cmt">// ─── Semantic ───</span>
+  <span class="kw">static const</span> <span class="cls">Color</span> success = <span class="cls">Color</span>(<span class="num">0xFF10B981</span>);
+  <span class="kw">static const</span> <span class="cls">Color</span> danger = <span class="cls">Color</span>(<span class="num">0xFFEF4444</span>);
+  <span class="kw">static const</span> <span class="cls">Color</span> warning = <span class="cls">Color</span>(<span class="num">0xFFF59E0B</span>);
+  <span class="kw">static const</span> <span class="cls">Color</span> accent = <span class="cls">Color</span>(<span class="num">0xFFFFC300</span>);
+
+  <span class="cmt">// ─── Light Theme ───</span>
+  <span class="kw">static const</span> <span class="cls">Color</span> lightBg = <span class="cls">Color</span>(<span class="num">0xFFFFFFFF</span>);
+  <span class="kw">static const</span> <span class="cls">Color</span> lightSurface = <span class="cls">Color</span>(<span class="num">0xFFF7F8FA</span>);
+  <span class="kw">static const</span> <span class="cls">Color</span> lightText = <span class="cls">Color</span>(<span class="num">0xFF0F1420</span>);
+
+  <span class="cmt">// ─── Dark Theme ───</span>
+  <span class="kw">static const</span> <span class="cls">Color</span> darkBg = <span class="cls">Color</span>(<span class="num">0xFF0A0E1A</span>);
+  <span class="kw">static const</span> <span class="cls">Color</span> darkSurface = <span class="cls">Color</span>(<span class="num">0xFF141826</span>);
+  <span class="kw">static const</span> <span class="cls">Color</span> darkText = <span class="cls">Color</span>(<span class="num">0xFFF5F7FA</span>);
+
+  <span class="cmt">// ─── Gradients ───</span>
+  <span class="kw">static const</span> <span class="cls">LinearGradient</span> primaryGradient = <span class="cls">LinearGradient</span>(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [primary, primaryDark],
+  );
+}</pre>
+      </div>
+    </div>
+
+    <!-- app_theme -->
+    <div class="tab-panel" id="t-theme">
+      <p style="margin-top:16px">ThemeData كامل مع Material 3 + TextTheme عربي:</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-file"><span class="dot"></span>lib/core/theme/app_theme.dart</span>
+          <span class="code-lang">dart</span>
+        </div>
+        <pre><span class="kw">class</span> <span class="cls">AppTheme</span> {
+  <span class="kw">static</span> <span class="cls">ThemeData</span> light = <span class="cls">ThemeData</span>(
+    useMaterial3: <span class="kw">true</span>,
+    brightness: Brightness.light,
+    fontFamily: <span class="str">'IBMPlexSansArabic'</span>,
+
+    colorScheme: <span class="kw">const</span> <span class="cls">ColorScheme</span>.light(
+      primary: MishwarakColors.primary,
+      onPrimary: Colors.white,
+      surface: MishwarakColors.lightSurface,
+      onSurface: MishwarakColors.lightText,
+    ),
+
+    elevatedButtonTheme: <span class="cls">ElevatedButtonThemeData</span>(
+      style: ElevatedButton.<span class="fn">styleFrom</span>(
+        backgroundColor: MishwarakColors.primary,
+        foregroundColor: Colors.white,
+        minimumSize: <span class="kw">const</span> <span class="cls">Size</span>(<span class="kw">double</span>.infinity, <span class="num">56</span>),
+        shape: <span class="cls">RoundedRectangleBorder</span>(
+          borderRadius: BorderRadius.<span class="fn">circular</span>(<span class="num">28</span>),
+        ),
+      ),
+    ),
+
+    textTheme: <span class="fn">_buildTextTheme</span>(MishwarakColors.lightText),
+  );
+
+  <span class="kw">static</span> <span class="cls">TextTheme</span> <span class="fn">_buildTextTheme</span>(<span class="cls">Color</span> color) =&gt; <span class="cls">TextTheme</span>(
+    displayLarge: <span class="cls">TextStyle</span>(
+      fontSize: <span class="num">42</span>, fontWeight: FontWeight.w900,
+      color: color, letterSpacing: <span class="num">-1.5</span>,
+    ),
+    headlineLarge: <span class="cls">TextStyle</span>(fontSize: <span class="num">22</span>, fontWeight: FontWeight.w800, color: color),
+    bodyLarge: <span class="cls">TextStyle</span>(fontSize: <span class="num">15</span>, fontWeight: FontWeight.w500, color: color),
+  );
+}</pre>
+      </div>
+    </div>
+
+    <!-- app_router -->
+    <div class="tab-panel" id="t-router">
+      <p style="margin-top:16px">التنقل باستخدام go_router — type-safe و declarative:</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-file"><span class="dot"></span>lib/core/router/app_router.dart</span>
+          <span class="code-lang">dart</span>
+        </div>
+        <pre><span class="kw">class</span> <span class="cls">AppRoutes</span> {
+  <span class="kw">static const</span> splash = <span class="str">'/'</span>;
+  <span class="kw">static const</span> home = <span class="str">'/home'</span>;
+  <span class="kw">static const</span> vehicle = <span class="str">'/booking/vehicle'</span>;
+  <span class="kw">static const</span> active = <span class="str">'/ride/active'</span>;
+}
+
+<span class="kw">final</span> appRouterProvider = <span class="cls">Provider</span>&lt;<span class="cls">GoRouter</span>&gt;((ref) {
+  <span class="kw">return</span> <span class="cls">GoRouter</span>(
+    initialLocation: AppRoutes.splash,
+    routes: [
+      <span class="cls">GoRoute</span>(
+        path: AppRoutes.splash,
+        builder: (_, __) =&gt; <span class="kw">const</span> <span class="cls">SplashScreen</span>(),
+      ),
+      <span class="cls">GoRoute</span>(
+        path: AppRoutes.home,
+        builder: (_, __) =&gt; <span class="kw">const</span> <span class="cls">HomeScreen</span>(),
+        routes: [
+          <span class="cls">GoRoute</span>(path: <span class="str">'search'</span>, builder: (_,__) =&gt; <span class="kw">const</span> <span class="cls">SearchScreen</span>()),
+          <span class="cls">GoRoute</span>(path: <span class="str">'wallet'</span>, builder: (_,__) =&gt; <span class="kw">const</span> <span class="cls">WalletScreen</span>()),
+        ],
+      ),
+    ],
+  );
+});
+
+<span class="cmt">// الاستخدام:</span>
+context.<span class="fn">push</span>(<span class="str">'/home/search'</span>);
+context.<span class="fn">go</span>(AppRoutes.home);</pre>
+      </div>
+    </div>
+
+    <!-- home_screen -->
+    <div class="tab-panel" id="t-home">
+      <p style="margin-top:16px">الشاشة الرئيسية — GoogleMap + DraggableScrollableSheet:</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-file"><span class="dot"></span>lib/features/home/home_screen.dart</span>
+          <span class="code-lang">dart</span>
+        </div>
+        <pre><span class="kw">class</span> <span class="cls">HomeScreen</span> <span class="kw">extends</span> <span class="cls">ConsumerStatefulWidget</span> {
+  <span class="kw">const</span> <span class="fn">HomeScreen</span>({<span class="kw">super</span>.key});
+
+  <span class="anno">@override</span>
+  <span class="cls">ConsumerState</span>&lt;<span class="cls">HomeScreen</span>&gt; <span class="fn">createState</span>() =&gt; _<span class="cls">HomeScreenState</span>();
+}
+
+<span class="kw">class</span> _<span class="cls">HomeScreenState</span> <span class="kw">extends</span> <span class="cls">ConsumerState</span>&lt;<span class="cls">HomeScreen</span>&gt; {
+  <span class="cls">GoogleMapController</span>? _mapController;
+
+  <span class="kw">static const</span> _adenCenter = <span class="cls">CameraPosition</span>(
+    target: <span class="cls">LatLng</span>(<span class="num">12.7794</span>, <span class="num">45.0367</span>), <span class="cmt">// عدن</span>
+    zoom: <span class="num">13</span>,
+  );
+
+  <span class="anno">@override</span>
+  <span class="cls">Widget</span> <span class="fn">build</span>(<span class="cls">BuildContext</span> context) {
+    <span class="kw">return</span> <span class="cls">Scaffold</span>(
+      drawer: <span class="kw">const</span> <span class="cls">HomeDrawer</span>(),
+      body: <span class="cls">Stack</span>(
+        children: [
+          <span class="cmt">// ═══ الخريطة ═══</span>
+          <span class="cls">GoogleMap</span>(
+            initialCameraPosition: _adenCenter,
+            onMapCreated: (c) =&gt; _mapController = c,
+            myLocationEnabled: <span class="kw">true</span>,
+            myLocationButtonEnabled: <span class="kw">false</span>,
+          ),
+
+          <span class="cmt">// ═══ Bottom Sheet ═══</span>
+          <span class="cls">DraggableScrollableSheet</span>(
+            initialChildSize: <span class="num">0.42</span>,
+            minChildSize: <span class="num">0.15</span>,
+            maxChildSize: <span class="num">0.85</span>,
+            builder: (context, scrollController) {
+              <span class="kw">return</span> <span class="cls">Container</span>(
+                decoration: <span class="cls">BoxDecoration</span>(
+                  color: Theme.<span class="fn">of</span>(context).cardColor,
+                  borderRadius: <span class="kw">const</span> BorderRadius.vertical(
+                    top: Radius.circular(<span class="num">28</span>),
+                  ),
+                ),
+                child: <span class="cls">SingleChildScrollView</span>(
+                  controller: scrollController,
+                  child: <span class="cls">Column</span>(children: [
+                    <span class="cls">Text</span>(<span class="str">'مرحباً، أحمد 👋'</span>),
+                    _<span class="cls">SearchButton</span>(),
+                    <span class="cls">SavedPlaceCard</span>(icon: Icons.home, label: <span class="str">'المنزل'</span>),
+                  ]),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}</pre>
+      </div>
+    </div>
+
+    <!-- Provider -->
+    <div class="tab-panel" id="t-provider">
+      <p style="margin-top:16px">مثال Riverpod Provider مع حفظ في SharedPreferences:</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-file"><span class="dot"></span>lib/core/providers/theme_provider.dart</span>
+          <span class="code-lang">dart</span>
+        </div>
+        <pre><span class="kw">final</span> themeModeProvider =
+    <span class="cls">StateNotifierProvider</span>&lt;<span class="cls">ThemeModeNotifier</span>, <span class="cls">ThemeMode</span>&gt;((ref) {
+  <span class="kw">return</span> <span class="cls">ThemeModeNotifier</span>();
+});
+
+<span class="kw">class</span> <span class="cls">ThemeModeNotifier</span> <span class="kw">extends</span> <span class="cls">StateNotifier</span>&lt;<span class="cls">ThemeMode</span>&gt; {
+  <span class="cls">ThemeModeNotifier</span>() : <span class="kw">super</span>(ThemeMode.system) {
+    _load();
+  }
+
+  <span class="kw">static const</span> _key = <span class="str">'theme_mode'</span>;
+
+  <span class="kw">Future&lt;void&gt;</span> <span class="fn">_load</span>() <span class="kw">async</span> {
+    <span class="kw">final</span> prefs = <span class="kw">await</span> SharedPreferences.<span class="fn">getInstance</span>();
+    <span class="kw">final</span> index = prefs.<span class="fn">getInt</span>(_key) ?? ThemeMode.system.index;
+    state = ThemeMode.values[index];
+  }
+
+  <span class="kw">Future&lt;void&gt;</span> <span class="fn">setMode</span>(<span class="cls">ThemeMode</span> mode) <span class="kw">async</span> {
+    state = mode;
+    <span class="kw">final</span> prefs = <span class="kw">await</span> SharedPreferences.<span class="fn">getInstance</span>();
+    <span class="kw">await</span> prefs.<span class="fn">setInt</span>(_key, mode.index);
+  }
+}
+
+<span class="cmt">// الاستخدام في أي Widget:</span>
+<span class="kw">class</span> <span class="cls">SettingsScreen</span> <span class="kw">extends</span> <span class="cls">ConsumerWidget</span> {
+  <span class="anno">@override</span>
+  <span class="cls">Widget</span> <span class="fn">build</span>(context, ref) {
+    <span class="kw">final</span> mode = ref.<span class="fn">watch</span>(themeModeProvider);
+    <span class="kw">return</span> <span class="cls">Switch</span>(
+      value: mode == ThemeMode.dark,
+      onChanged: (v) =&gt; ref.<span class="fn">read</span>(themeModeProvider.notifier)
+          .<span class="fn">setMode</span>(v ? ThemeMode.dark : ThemeMode.light),
+    );
+  }
+}</pre>
+      </div>
+    </div>
+
+    <!-- Model -->
+    <div class="tab-panel" id="t-model">
+      <p style="margin-top:16px">Data Class مع Freezed — immutable + copyWith + JSON:</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-file"><span class="dot"></span>lib/features/ride/models/driver.dart</span>
+          <span class="code-lang">dart</span>
+        </div>
+        <pre><span class="kw">import</span> <span class="str">'package:freezed_annotation/freezed_annotation.dart'</span>;
+<span class="kw">part</span> <span class="str">'driver.freezed.dart'</span>;
+<span class="kw">part</span> <span class="str">'driver.g.dart'</span>;
+
+<span class="anno">@freezed</span>
+<span class="kw">class</span> <span class="cls">Driver</span> <span class="kw">with</span> _$<span class="cls">Driver</span> {
+  <span class="kw">const factory</span> <span class="cls">Driver</span>({
+    <span class="kw">required</span> <span class="cls">String</span> id,
+    <span class="kw">required</span> <span class="cls">String</span> name,
+    <span class="kw">required</span> <span class="cls">String</span> phone,
+    <span class="kw">required</span> <span class="kw">double</span> rating,
+    <span class="kw">required</span> <span class="kw">int</span> completedTrips,
+    <span class="kw">required</span> <span class="cls">String</span> carModel,
+    <span class="kw">required</span> <span class="cls">String</span> plateNumber,
+    <span class="cls">String</span>? photoUrl,
+    <span class="anno">@Default</span>(<span class="kw">false</span>) <span class="kw">bool</span> isFemale,
+  }) = _<span class="cls">Driver</span>;
+
+  <span class="kw">factory</span> <span class="cls">Driver</span>.<span class="fn">fromJson</span>(<span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="kw">dynamic</span>&gt; json) =&gt;
+      _$<span class="cls">DriverFromJson</span>(json);
+}
+
+<span class="cmt">// الاستخدام:</span>
+<span class="kw">final</span> driver = <span class="cls">Driver</span>(
+  id: <span class="str">'d123'</span>,
+  name: <span class="str">'محمد صالح'</span>,
+  rating: <span class="num">4.92</span>,
+  completedTrips: <span class="num">1247</span>,
+  <span class="cmt">// ...</span>
+);
+
+<span class="cmt">// نسخة معدّلة (immutable)</span>
+<span class="kw">final</span> updated = driver.<span class="fn">copyWith</span>(rating: <span class="num">4.95</span>);
+
+<span class="cmt">// من JSON</span>
+<span class="kw">final</span> fromApi = <span class="cls">Driver</span>.<span class="fn">fromJson</span>(response.data);</pre>
+      </div>
+      <div class="callout">
+        <div class="callout-title">⚙️ توليد الكود</div>
+        <p>بعد كتابة الـ model، شغّل: <code>dart run build_runner build -d</code> لتوليد ملفات <code>.freezed.dart</code> و <code>.g.dart</code></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ BACKEND ═══════════════ -->
+  <section id="backend">
+    <div class="section-header">
+      <span class="section-tag">07 · Backend</span>
+      <h2>API Backend</h2>
+      <p>الاختيارات الموصى بها للـ backend</p>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="card-icon">🚀</div>
+        <h4>Node.js + Express</h4>
+        <p>الخيار الأسهل والأشهر — Socket.io مدمج، مناسب لتتبع الرحلات الحية</p>
+        <ul>
+          <li>PostgreSQL + PostGIS للخرائط</li>
+          <li>Redis للـ real-time</li>
+          <li>JWT للمصادقة</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">🐘</div>
+        <h4>Laravel (PHP)</h4>
+        <p>إذا كان لديك خبرة في PHP — قوي جداً للـ REST APIs مع Eloquent ORM</p>
+        <ul>
+          <li>MySQL/PostgreSQL</li>
+          <li>Pusher للـ real-time</li>
+          <li>Sanctum للمصادقة</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔥</div>
+        <h4>Firebase (No Backend)</h4>
+        <p>الأسرع للـ MVP — تخطّى الـ backend كلياً</p>
+        <ul>
+          <li>Firestore للبيانات</li>
+          <li>Cloud Functions</li>
+          <li>Realtime Database للتتبع</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>API Endpoints الأساسية</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-file">REST API · Base: <code>/api/v1</code></span>
+        <span class="code-lang">http</span>
+      </div>
+      <pre><span class="cmt"># ═══ Authentication ═══</span>
+POST   /auth/send-otp          {phone}
+POST   /auth/verify-otp        {phone, code}
+POST   /auth/refresh           {refresh_token}
+
+<span class="cmt"># ═══ User ═══</span>
+GET    /user/me
+PATCH  /user/me                {name, email, ...}
+POST   /user/addresses         {label, lat, lng, address}
+
+<span class="cmt"># ═══ Rides ═══</span>
+POST   /rides/estimate         {pickup, destination, vehicle_type}
+POST   /rides                  {pickup, destination, vehicle_type, payment}
+GET    /rides/:id
+POST   /rides/:id/cancel
+POST   /rides/:id/rate         {rating, tags[], tip}
+GET    /rides/history?page=1&limit=20
+
+<span class="cmt"># ═══ Wallet ═══</span>
+GET    /wallet/balance
+POST   /wallet/topup           {amount, method}
+GET    /wallet/transactions
+
+<span class="cmt"># ═══ WebSocket Events ═══</span>
+socket.on('driver_location'   , {ride_id, lat, lng})
+socket.on('driver_arrived'    , {ride_id})
+socket.on('ride_status'       , {ride_id, status})
+socket.emit('user_location'   , {lat, lng})</pre>
+    </div>
+  </section>
+
+  <!-- ═══════════════ ROADMAP ═══════════════ -->
+  <section id="roadmap">
+    <div class="section-header">
+      <span class="section-tag">08 · Roadmap</span>
+      <h2>خارطة الطريق للتطوير</h2>
+      <p>جدول زمني مقترح لبناء MVP خلال 12 أسبوع</p>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-week">أسبوع 1-2</div>
+        <h4>الإعداد والبنية التحتية</h4>
+        <p>إعداد Flutter، Firebase، Google Maps API، Backend server، CI/CD، Repositories</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-week">أسبوع 3</div>
+        <h4>Splash + Onboarding + Auth</h4>
+        <p>شاشة البداية، Onboarding (3 slides)، تسجيل دخول بالجوال + OTP</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-week">أسبوع 4-5</div>
+        <h4>الشاشة الرئيسية + الخريطة</h4>
+        <p>تكامل Google Maps، Bottom Sheet، البحث عن الوجهات، إدارة العناوين المحفوظة</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-week">أسبوع 6-7</div>
+        <h4>حجز الرحلة</h4>
+        <p>اختيار المركبة، حساب السعر، طرق الدفع، البحث عن سائق، matching algorithm</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-week">أسبوع 8</div>
+        <h4>الرحلة النشطة + Real-time</h4>
+        <p>Socket.io tracking، رسم مسار السائق، اتصال + رسائل، زر SOS</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-week">أسبوع 9</div>
+        <h4>انتهاء الرحلة + التقييم</h4>
+        <p>ملخص السعر، تقييم مفصّل، إكرامية، إرسال البيانات</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-week">أسبوع 10</div>
+        <h4>المحفظة + الرحلات + Profile</h4>
+        <p>شحن المحفظة، سجل المعاملات، رحلات سابقة، تعديل الملف الشخصي</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-week">أسبوع 11</div>
+        <h4>الإشعارات + المكافآت + VIP</h4>
+        <p>Push notifications، نظام النقاط، اشتراك VIP، الكوبونات</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-week">أسبوع 12</div>
+        <h4>QA + Beta + النشر</h4>
+        <p>اختبارات شاملة، TestFlight/Play Beta، إصلاحات، نشر Google Play + App Store</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ CHECKLIST ═══════════════ -->
+  <section id="checklist">
+    <div class="section-header">
+      <span class="section-tag">09 · Launch Checklist</span>
+      <h2>قائمة قبل النشر</h2>
+      <p>تأكد من كل هذه العناصر قبل النشر على المتاجر</p>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>🔒 الأمان</h4>
+        <ul>
+          <li>تخزين tokens في flutter_secure_storage</li>
+          <li>Obfuscation للكود (--obfuscate --split-debug-info)</li>
+          <li>SSL Certificate Pinning</li>
+          <li>حماية من الـ Root/Jailbreak detection</li>
+          <li>عدم طباعة أي بيانات حساسة في logs</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>⚡ الأداء</h4>
+        <ul>
+          <li>const constructors أينما أمكن</li>
+          <li>ListView.builder بدلاً من ListView</li>
+          <li>Cache للصور (cached_network_image)</li>
+          <li>تجنب rebuilds غير ضرورية</li>
+          <li>اختبار على أجهزة بطيئة (Android Go)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>🌍 التوطين</h4>
+        <ul>
+          <li>كل النصوص في ملفات .arb</li>
+          <li>اختبار RTL كامل</li>
+          <li>تنسيق الأرقام والتواريخ (intl)</li>
+          <li>عملة العملة (ر.ي)</li>
+          <li>خطوط عربية مضمّنة</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>📊 التحليلات</h4>
+        <ul>
+          <li>Firebase Analytics للأحداث</li>
+          <li>Crashlytics لمتابعة الأخطاء</li>
+          <li>Performance Monitoring</li>
+          <li>User Properties (نوع المستخدم، المنطقة)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>♿ الوصولية (Accessibility)</h4>
+        <ul>
+          <li>Semantics labels على الأزرار</li>
+          <li>حجم نص قابل للتكبير</li>
+          <li>تباين ألوان كافي (WCAG AA)</li>
+          <li>مناطق النقر ≥ 44px</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>📱 متطلبات المتاجر</h4>
+        <ul>
+          <li>أيقونات بكل المقاسات المطلوبة</li>
+          <li>لقطات شاشة (iPhone + iPad + Android)</li>
+          <li>Privacy Policy + Terms of Service</li>
+          <li>وصف التطبيق (ar + en)</li>
+          <li>App Store Connect / Play Console</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">⚠️ تنبيه مهم للسوق اليمني</div>
+      <p>
+        لا يوجد Google Pay أو Apple Pay في اليمن. ركّز على:
+        <strong>الدفع النقدي، محافظ الاتصالات (فلوسي)، البطاقات المحلية</strong>.
+        قد تحتاج للتكامل مع بنك محلي مثل بنك التسليف التعاوني أو الكريمي.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ CTA ═══════════════ -->
+  <div class="cta">
+    <h2 style="margin-top:0">جاهز للبدء؟ 🚀</h2>
+    <p style="max-width:600px; margin: 0 auto 24px;">
+      كل الملفات الأساسية جاهزة في مجلد <code>flutter_code/</code>.
+      انسخها إلى مشروعك الجديد وابدأ من هنا.
+    </p>
+    <div class="btn-group">
+      <a href="Mishwarak.html" class="btn secondary">← رجوع للتصميم التفاعلي</a>
+      <a href="#quick-start" class="btn">↑ العودة للبداية</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function showTab(id) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(id).classList.add('active');
+  }
+</script>
+</body>
+</html>

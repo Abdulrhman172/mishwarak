@@ -1,0 +1,72 @@
+name: mishwarak
+description: تطبيق مِشوارَك - توصيل الركاب في اليمن
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # ═══════ State Management ═══════
+  flutter_riverpod: ^2.5.1        # إدارة الحالة (recommended)
+  # or: provider: ^6.1.2
+
+  # ═══════ Navigation ═══════
+  go_router: ^14.2.0              # التنقل بين الشاشات
+
+  # ═══════ Networking ═══════
+  dio: ^5.4.3+1                   # HTTP client قوي
+  # retrofit: ^4.1.0              # معطّلة مؤقتاً - retrofit_generator غير متوافق مع Dart SDK الحالي
+
+  # ═══════ Maps & Location ═══════
+  # google_maps_flutter: ^2.7.0   # معطّلة مؤقتاً - تحتاج مفتاح API، وغير مدعومة على Windows desktop
+  geolocator: ^12.0.0             # الحصول على الموقع
+  geocoding: ^3.0.0               # تحويل العناوين
+  flutter_polyline_points: ^2.1.0 # رسم المسارات
+
+  # ═══════ UI & Design ═══════
+  google_fonts: ^6.2.1            # خطوط - IBM Plex Sans Arabic
+  flutter_svg: ^2.0.10+1          # عرض SVG
+  cached_network_image: ^3.3.1    # صور مع cache
+  shimmer: ^3.0.0                 # loading skeletons
+  lottie: ^3.1.2                  # animations
+
+  # ═══════ Storage ═══════
+  shared_preferences: ^2.2.3      # تخزين بسيط
+  flutter_secure_storage: ^9.2.2  # tokens آمنة
+  hive_flutter: ^1.1.0            # قاعدة بيانات محلية
+
+  # ═══════ Real-time ═══════
+  socket_io_client: ^2.0.3+1      # tracking السائق live
+
+  # ═══════ Data classes ═══════
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # ═══════ Utils ═══════
+  intl: ^0.20.2                   # تنسيق التواريخ والأرقام
+  url_launcher: ^6.3.0            # فتح روابط، اتصال، SMS
+  permission_handler: ^11.3.1     # طلب الأذونات
+  image_picker: ^1.1.2            # اختيار الصور
+  connectivity_plus: ^6.0.3       # فحص الاتصال
+  flutter_local_notifications: ^17.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.10
+  # retrofit_generator: ^8.1.2    # معطّلة - انظر ملاحظة retrofit أعلاه
+  json_serializable: ^6.8.0
+  freezed: ^2.5.2                 # data classes
+
+flutter:
+  uses-material-design: true
+  # NOTE: custom fonts and generated l10n disabled until
+  # assets/fonts and lib/l10n are actually added to the repo.

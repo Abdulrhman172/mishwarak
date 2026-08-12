@@ -59,3 +59,17 @@ enum RideStatus {
   completed,       // انتهت
   cancelled,       // ملغاة
 }
+
+/// بيانات ثابتة - في الإنتاج تأتي من الـ API
+class DriversRepository {
+  static const Driver mockDriver = Driver(
+    id: 'drv_001',
+    name: 'محمد صالح',
+    phone: '+967771234567',
+    rating: 4.92,
+    completedTrips: 1247,
+    carModel: 'تويوتا هايلوكس',
+    carColor: 'أبيض',
+    plateNumber: 'ADN 4287',
+  );
+}

@@ -215,23 +215,31 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                 borderRadius: BorderRadius.circular(27),
                               ),
                             ),
+                            // الأسماء الطويلة (مثل "سائقة للنساء") مع السعر
+                            // تتجاوز عرض الزر على الشاشات الضيقة، لذا Flexible.
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
-                                  'اطلب ${selected.nameAr}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
+                                Flexible(
+                                  child: Text(
+                                    'اطلب ${selected.nameAr}',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
-                                Text(
-                                  '  · ${_formatPrice(selected.price)} ر.ي',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white.withOpacity(0.7),
+                                Flexible(
+                                  child: Text(
+                                    '  · ${_formatPrice(selected.price)} ر.ي',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white.withOpacity(0.7),
+                                    ),
                                   ),
                                 ),
                               ],

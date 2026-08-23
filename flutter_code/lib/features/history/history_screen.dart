@@ -2,131 +2,177 @@
 // history_screen.dart - سجل الرحلات السابقة
 // ═══════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/formatters.dart';
+import '../../l10n/app_localizations.dart';
+import '../ride/data/ride_repository.dart';
 
-/// رحلة واحدة في السجل.
-class _Trip {
-  final String date;
-  final String time;
-  final String from;
-  final String to;
-  final int price;
-  final bool cancelled;
-  final int? rating;
-
-  const _Trip({
-    required this.date,
-    required this.time,
-    required this.from,
-    required this.to,
-    required this.price,
-    this.cancelled = false,
-    this.rating,
-  });
-}
-
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
 
-  static const _trips = [
-    _Trip(date: 'اليوم', time: '09:24', from: 'كريتر', to: 'جامعة عدن', price: 3800, rating: 5),
-    _Trip(date: 'أمس', time: '18:12', from: 'التواهي', to: 'المعلا', price: 2500, rating: 4),
-    _Trip(date: 'أمس', time: '10:30', from: 'خور مكسر', to: 'كريتر', price: 3200, rating: 5),
-    _Trip(date: '4 يوليو', time: '14:00', from: 'الملاح', to: 'جامعة عدن', price: 4500, cancelled: true),
-    _Trip(date: '3 يوليو', time: '08:00', from: 'المنزل', to: 'العمل', price: 2100, rating: 5),
-  ];
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final history = ref.watch(rideHistoryProvider);
+    final l10n = L10n.of(context);
 
-  static const _stats = [
-    ('رحلات', '47'),
-    ('كيلومتر', '312'),
-    ('توفير', '4.2K'),
-  ];
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.myTrips),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            onPressed: () => ref.invalidate(rideHistoryProvider),
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
+      ),
+      body: history.when(
+        data: (trips) => trips.isEmpty
+            ? const _EmptyHistory()
+            : _HistoryList(trips: trips),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, __) => _EmptyHistory(message: l10n.tripsFailed),
+      ),
+    );
+  }
+}
+
+// ─────────────── الإحصائيات + القائمة ───────────────
+class _HistoryList extends StatelessWidget {
+  final List<RideSummary> trips;
+
+  const _HistoryList({required this.trips});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('رحلاتي'),
-        centerTitle: false,
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.filter_list_rounded),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // ═══ إحصائيات ═══
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Row(
-              children: [
-                for (final (label, value) in _stats) ...[
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.dividerColor),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            value,
-                            style: theme.textTheme.displaySmall?.copyWith(
-                              fontSize: 20,
-                              color: MishwarakColors.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            label,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: MishwarakColors.lightTextMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (label != _stats.last.$1) const SizedBox(width: 10),
-                ],
-              ],
-            ),
-          ),
+    // الرحلات المكتملة فقط تدخل في الإحصائيات.
+    final completed = trips.where((t) => !t.cancelled).toList();
+    final totalFare = completed.fold<int>(0, (sum, t) => sum + t.fare);
+    final rated = completed.where((t) => t.rating != null).toList();
+    final avgRating = rated.isEmpty
+        ? null
+        : rated.fold<int>(0, (s, t) => s + t.rating!) / rated.length;
 
-          // ═══ قائمة الرحلات ═══
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-              itemCount: _trips.length,
-              itemBuilder: (context, i) {
-                final trip = _trips[i];
-                // عنوان التاريخ يظهر مرة واحدة لكل يوم
-                final showDate = i == 0 || _trips[i - 1].date != trip.date;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (showDate)
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(4, i == 0 ? 4 : 16, 4, 8),
-                        child: Text(
-                          trip.date,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
+    final l10n = L10n.of(context);
+    final stats = <(String, String)>[
+      (l10n.tripsCount, '${completed.length}'),
+      (l10n.totalSpent, formatMoney(totalFare)),
+      (l10n.avgRating, avgRating == null ? '—' : avgRating.toStringAsFixed(1)),
+    ];
+
+    return Column(
+      children: [
+        // ═══ إحصائيات ═══
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Row(
+            children: [
+              for (var i = 0; i < stats.length; i++) ...[
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: theme.dividerColor),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          stats[i].$2,
+                          style: theme.textTheme.displaySmall?.copyWith(
+                            fontSize: 20,
+                            color: MishwarakColors.primary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          stats[i].$1,
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: MishwarakColors.lightTextMuted,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (i < stats.length - 1) const SizedBox(width: 10),
+              ],
+            ],
+          ),
+        ),
+
+        // ═══ قائمة الرحلات ═══
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            itemCount: trips.length,
+            itemBuilder: (context, i) {
+              final trip = trips[i];
+              final day = formatDayLabel(trip.requestedAt);
+              // عنوان التاريخ يظهر مرة واحدة لكل يوم
+              final showDate =
+                  i == 0 || formatDayLabel(trips[i - 1].requestedAt) != day;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (showDate)
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(4, i == 0 ? 4 : 16, 4, 8),
+                      child: Text(
+                        day,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: MishwarakColors.lightTextMuted,
                         ),
                       ),
-                    _TripCard(trip: trip),
-                  ],
-                );
-              },
+                    ),
+                  _TripCard(trip: trip),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────── لا توجد رحلات ───────────────
+class _EmptyHistory extends StatelessWidget {
+  /// النص الافتراضي يُبنى في build لأنه يحتاج context للترجمة.
+  final String? message;
+
+  const _EmptyHistory({this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.local_taxi_outlined,
+            size: 44,
+            color: MishwarakColors.lightTextMuted,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message ?? L10n.of(context).noTripsYet,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: MishwarakColors.lightTextMuted,
             ),
           ),
         ],
@@ -137,7 +183,7 @@ class HistoryScreen extends StatelessWidget {
 
 // ─────────────── بطاقة رحلة ───────────────
 class _TripCard extends StatelessWidget {
-  final _Trip trip;
+  final RideSummary trip;
 
   const _TripCard({required this.trip});
 
@@ -184,7 +230,7 @@ class _TripCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      trip.time,
+                      formatTime(trip.requestedAt),
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontSize: 12,
                         color: MishwarakColors.lightTextMuted,
@@ -201,8 +247,8 @@ class _TripCard extends StatelessWidget {
                           color: MishwarakColors.danger.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text(
-                          'ملغاة',
+                        child: Text(
+                          L10n.of(context).cancelledTrip,
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
@@ -228,9 +274,9 @@ class _TripCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 6),
-                _Endpoint(label: trip.from, isDestination: false),
+                _Endpoint(label: trip.fromAddress, isDestination: false),
                 const SizedBox(height: 4),
-                _Endpoint(label: trip.to, isDestination: true),
+                _Endpoint(label: trip.toAddress, isDestination: true),
               ],
             ),
           ),
@@ -241,14 +287,11 @@ class _TripCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                trip.price.toString().replaceAllMapped(
-                      RegExp(r'(\d)(?=(\d{3})+$)'),
-                      (m) => '${m[1]},',
-                    ),
+                formatMoney(trip.fare),
                 style: theme.textTheme.headlineSmall,
               ),
               Text(
-                'ر.ي',
+                L10n.of(context).currency,
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,

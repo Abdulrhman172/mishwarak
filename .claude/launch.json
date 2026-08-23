@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "mishwarak-web",
+      "runtimeExecutable": "flutter",
+      "runtimeArgs": ["run", "-d", "web-server", "--web-port", "8899", "--web-hostname", "localhost", "--dart-define-from-file=env.json"],
+      "cwd": "flutter_code",
+      "port": 8899
+    }
+  ]
+}

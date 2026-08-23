@@ -1,0 +1,7 @@
+# إعداد توليد الترجمات
+# العربية هي لغة القالب لأن التطبيق عربي أولاً.
+arb-dir: lib/l10n
+template-arb-file: app_ar.arb
+output-localization-file: app_localizations.dart
+output-class: L10n
+nullable-getter: false

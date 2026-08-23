@@ -1,9 +1,14 @@
 // ═══════════════════════════════════════════════════════════════
 // app_router.dart - نظام التنقل باستخدام go_router
 // ═══════════════════════════════════════════════════════════════
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../supabase/supabase_service.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/auth/login_screen.dart';
@@ -37,10 +42,63 @@ class AppRoutes {
   static const notifications = '/notifications';
 }
 
+/// المسارات المتاحة قبل تسجيل الدخول.
+const _publicRoutes = <String>{
+  AppRoutes.splash,
+  AppRoutes.onboarding,
+  AppRoutes.login,
+  AppRoutes.otp,
+};
+
+/// يُخطر go_router بإعادة تقييم الحماية كلما تغيّرت الجلسة،
+/// فينتقل المستخدم تلقائياً عند الدخول أو الخروج.
+class _AuthRefresh extends ChangeNotifier {
+  StreamSubscription<AuthState>? _sub;
+
+  _AuthRefresh() {
+    if (SupabaseService.isReady) {
+      _sub = SupabaseService.client.auth.onAuthStateChange
+          .listen((_) => notifyListeners());
+    }
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final refresh = _AuthRefresh();
+  ref.onDispose(refresh.dispose);
+
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
+    refreshListenable: refresh,
+
+    // ═══════════════ حارس المسارات ═══════════════
+    redirect: (context, state) {
+      // بلا إعداد Supabase يعمل التطبيق ببيانات وهمية ولا توجد جلسة
+      // أصلاً — الحماية هنا كانت ستحبس المطوّر خارج كل الشاشات.
+      if (!SupabaseService.isReady) return null;
+
+      final signedIn = SupabaseService.isSignedIn;
+      final isPublic = _publicRoutes.contains(state.matchedLocation);
+
+      // زائر يحاول الوصول لشاشة محمية → إلى تسجيل الدخول
+      if (!signedIn && !isPublic) return AppRoutes.login;
+
+      // مسجّل دخول ووصل لشاشات الدخول → إلى الرئيسية.
+      // نستثني السبلاش ليُكمل حركته الافتتاحية.
+      if (signedIn && isPublic && state.matchedLocation != AppRoutes.splash) {
+        return AppRoutes.home;
+      }
+
+      return null;
+    },
+
     routes: [
       GoRoute(
         path: AppRoutes.splash,
@@ -86,21 +144,37 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+      // الوجهة تُمرَّر كمعاملات استعلام لا عبر `extra`، حتى تبقى الحالة
+      // بعد تحديث الصفحة على الويب.
       GoRoute(
         path: AppRoutes.vehicle,
-        builder: (_, __) => const VehicleSelectionScreen(),
+        builder: (_, state) {
+          final q = state.uri.queryParameters;
+          return VehicleSelectionScreen(
+            destName: q['name'] ?? 'الوجهة',
+            destAddress: q['addr'] ?? '',
+            destLat: double.tryParse(q['lat'] ?? '') ?? 0,
+            destLng: double.tryParse(q['lng'] ?? '') ?? 0,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.finding,
-        builder: (_, __) => const FindingDriverScreen(),
+        builder: (_, state) => FindingDriverScreen(
+          rideId: state.uri.queryParameters['ride'] ?? '',
+        ),
       ),
       GoRoute(
         path: AppRoutes.active,
-        builder: (_, __) => const ActiveRideScreen(),
+        builder: (_, state) => ActiveRideScreen(
+          rideId: state.uri.queryParameters['ride'] ?? '',
+        ),
       ),
       GoRoute(
         path: AppRoutes.rating,
-        builder: (_, __) => const RatingScreen(),
+        builder: (_, state) => RatingScreen(
+          rideId: state.uri.queryParameters['ride'] ?? '',
+        ),
       ),
     ],
   );

@@ -1,0 +1,60 @@
+{
+  "indexes": [
+    {
+      "//": "سجل رحلات المستخدم مرتّباً من الأحدث - شاشة history",
+      "collectionGroup": "rides",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "requestedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "//": "الرحلة النشطة للمستخدم - لاستعادة الحالة عند فتح التطبيق",
+      "collectionGroup": "rides",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "requestedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "//": "البحث عن سائقين متاحين حسب فئة المركبة",
+      "collectionGroup": "drivers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isOnline", "order": "ASCENDING" },
+        { "fieldPath": "vehicleCategory", "order": "ASCENDING" },
+        { "fieldPath": "rating", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "//": "كتالوج المركبات الفعّالة بالترتيب المعروض",
+      "collectionGroup": "vehicle_types",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "active", "order": "ASCENDING" },
+        { "fieldPath": "sortOrder", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "//": "معاملات المحفظة من الأحدث",
+      "collectionGroup": "transactions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "//": "الإشعارات غير المقروءة أولاً ثم الأحدث",
+      "collectionGroup": "items",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "read", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

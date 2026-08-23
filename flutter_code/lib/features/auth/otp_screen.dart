@@ -5,31 +5,38 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/app_localizations.dart';
+import 'data/auth_repository.dart';
 
-class OtpScreen extends StatefulWidget {
+class OtpScreen extends ConsumerStatefulWidget {
   final String phoneNumber;
 
   const OtpScreen({super.key, required this.phoneNumber});
 
   @override
-  State<OtpScreen> createState() => _OtpScreenState();
+  ConsumerState<OtpScreen> createState() => _OtpScreenState();
 }
 
-class _OtpScreenState extends State<OtpScreen> {
-  static const _length = 4;
+class _OtpScreenState extends ConsumerState<OtpScreen> {
+  static const _length = 6;
 
   final _controllers = List.generate(_length, (_) => TextEditingController());
   final _nodes = List.generate(_length, (_) => FocusNode());
 
   int _secondsLeft = 30;
   Timer? _timer;
+  bool _isVerifying = false;
+  bool _isResending = false;
+  String? _error;
 
   String get _code => _controllers.map((c) => c.text).join();
   bool get _isComplete => _code.length == _length;
+  String get _fullPhone => '+967${widget.phoneNumber}';
 
   @override
   void initState() {
@@ -73,17 +80,45 @@ class _OtpScreenState extends State<OtpScreen> {
     setState(() {});
   }
 
-  void _verify() {
-    // TODO: التحقق من الرمز عبر الـ API
-    context.go(AppRoutes.home);
+  Future<void> _verify() async {
+    setState(() {
+      _isVerifying = true;
+      _error = null;
+    });
+    try {
+      await ref.read(authRepositoryProvider).verifyOtp(
+            phone: _fullPhone,
+            token: _code,
+          );
+      if (!mounted) return;
+      context.go(AppRoutes.home);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = L10n.of(context).otpInvalid);
+    } finally {
+      if (mounted) setState(() => _isVerifying = false);
+    }
+  }
+
+  Future<void> _resend() async {
+    setState(() => _isResending = true);
+    try {
+      await ref.read(authRepositoryProvider).sendOtp(_fullPhone);
+      if (mounted) _startCountdown();
+    } catch (e) {
+      if (mounted) setState(() => _error = L10n.of(context).otpResendFailed);
+    } finally {
+      if (mounted) setState(() => _isResending = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = L10n.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('رمز التحقق')),
+      appBar: AppBar(title: Text(l10n.otpTitle)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -91,7 +126,7 @@ class _OtpScreenState extends State<OtpScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 12),
-              Text('أدخل الرمز', style: theme.textTheme.displaySmall),
+              Text(l10n.otpEnter, style: theme.textTheme.displaySmall),
               const SizedBox(height: 8),
               Text.rich(
                 TextSpan(
@@ -99,7 +134,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     color: MishwarakColors.lightTextMuted,
                   ),
                   children: [
-                    const TextSpan(text: 'تم إرسال رمز مكوّن من 4 أرقام إلى '),
+                    TextSpan(text: l10n.otpSentTo),
                     TextSpan(
                       text: '+967 ${widget.phoneNumber}',
                       style: const TextStyle(
@@ -119,10 +154,10 @@ class _OtpScreenState extends State<OtpScreen> {
                 children: [
                   for (var i = 0; i < _length; i++)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: SizedBox(
-                        width: 60,
-                        height: 68,
+                        width: 44,
+                        height: 60,
                         child: TextField(
                           controller: _controllers[i],
                           focusNode: _nodes[i],
@@ -147,24 +182,44 @@ class _OtpScreenState extends State<OtpScreen> {
               Center(
                 child: _secondsLeft > 0
                     ? Text(
-                        'إعادة الإرسال بعد $_secondsLeft ثانية',
+                        l10n.otpResendIn(_secondsLeft),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: MishwarakColors.lightTextMuted,
                         ),
                       )
                     : TextButton(
-                        onPressed: _startCountdown,
-                        child: const Text('إعادة إرسال الرمز'),
+                        onPressed: _isResending ? null : _resend,
+                        child: Text(l10n.otpResend),
                       ),
               ),
 
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _error!,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+
               const Spacer(),
               ElevatedButton(
-                onPressed: _isComplete ? _verify : null,
+                onPressed: _isComplete && !_isVerifying ? _verify : null,
                 style: ElevatedButton.styleFrom(
                   disabledBackgroundColor: theme.dividerColor,
                 ),
-                child: const Text('تأكيد'),
+                child: _isVerifying
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(l10n.confirm),
               ),
               const SizedBox(height: 12),
             ],

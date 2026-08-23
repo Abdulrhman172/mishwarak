@@ -2,42 +2,31 @@
 // wallet_screen.dart - المحفظة (الرصيد، طرق الدفع، المعاملات)
 // ═══════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/formatters.dart';
+import '../../l10n/app_localizations.dart';
+import 'data/wallet_repository.dart';
 
-/// معاملة واحدة في سجل المحفظة.
-class _Txn {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final int amount; // موجب = إيداع، سالب = خصم
-
-  const _Txn(this.icon, this.title, this.subtitle, this.amount);
-}
-
-class WalletScreen extends StatelessWidget {
+class WalletScreen extends ConsumerWidget {
   const WalletScreen({super.key});
 
-  static const _transactions = [
-    _Txn(Icons.local_taxi_outlined, 'رحلة إلى جامعة عدن', 'اليوم · 09:24', -3800),
-    _Txn(Icons.add_circle_outline, 'شحن المحفظة', 'أمس · 18:12', 10000),
-    _Txn(Icons.card_giftcard, 'مكافأة ترحيبية', '4 يوليو · 14:00', 2000),
-    _Txn(Icons.local_taxi_outlined, 'رحلة إلى المعلا', '3 يوليو · 20:30', -2100),
-    _Txn(Icons.local_offer_outlined, 'استرداد كوبون', '2 يوليو · 11:15', 500),
-  ];
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = L10n.of(context);
+    final balance = ref.watch(walletBalanceProvider);
+    final transactions = ref.watch(walletTransactionsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('المحفظة'),
+        title: Text(l10n.walletTitle),
         centerTitle: false,
         actions: [
           TextButton(
             onPressed: () {},
-            child: const Text('السجل'),
+            child: Text(l10n.history),
           ),
         ],
       ),
@@ -61,25 +50,32 @@ class WalletScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'الرصيد الحالي',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                Text(
+                  l10n.currentBalance,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
                 const SizedBox(height: 4),
-                const Text.rich(
+                Text.rich(
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: '15,300 ',
-                        style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900),
+                        text: '${balance.when(
+                          data: formatMoney,
+                          loading: () => '—',
+                          error: (_, __) => '—',
+                        )} ',
+                        style: const TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                       TextSpan(
-                        text: 'ر.ي',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        text: l10n.currency,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                       ),
                     ],
                   ),
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white),
                 ),
                 const SizedBox(height: 18),
                 Row(
@@ -87,18 +83,18 @@ class WalletScreen extends StatelessWidget {
                     Expanded(
                       child: _BalanceAction(
                         icon: Icons.add,
-                        label: 'شحن الرصيد',
+                        label: l10n.topUp,
                         filled: true,
-                        onTap: () => _snack(context, 'شحن الرصيد قيد الإنشاء'),
+                        onTap: () => _snack(context, l10n.topUpComingSoon),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: _BalanceAction(
                         icon: Icons.send_outlined,
-                        label: 'تحويل',
+                        label: l10n.transfer,
                         filled: false,
-                        onTap: () => _snack(context, 'التحويل قيد الإنشاء'),
+                        onTap: () => _snack(context, l10n.transferComingSoon),
                       ),
                     ),
                   ],
@@ -112,8 +108,8 @@ class WalletScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('طرق الدفع', style: theme.textTheme.headlineSmall),
-              TextButton(onPressed: () {}, child: const Text('+ إضافة')),
+              Text(l10n.paymentMethods, style: theme.textTheme.headlineSmall),
+              TextButton(onPressed: () {}, child: Text('+ ${l10n.add}')),
             ],
           ),
           const SizedBox(height: 10),
@@ -133,7 +129,7 @@ class WalletScreen extends StatelessWidget {
 
           // ═══ المعاملات ═══
           const SizedBox(height: 24),
-          Text('آخر المعاملات', style: theme.textTheme.headlineSmall),
+          Text(l10n.recentTransactions, style: theme.textTheme.headlineSmall),
           const SizedBox(height: 10),
           Container(
             decoration: BoxDecoration(
@@ -142,13 +138,25 @@ class WalletScreen extends StatelessWidget {
               border: Border.all(color: theme.dividerColor),
             ),
             clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: [
-                for (var i = 0; i < _transactions.length; i++) ...[
-                  if (i > 0) Divider(height: 1, color: theme.dividerColor),
-                  _TxnTile(txn: _transactions[i]),
-                ],
-              ],
+            child: transactions.when(
+              data: (list) {
+                if (list.isEmpty) {
+                  return const _EmptyTxns();
+                }
+                return Column(
+                  children: [
+                    for (var i = 0; i < list.length; i++) ...[
+                      if (i > 0) Divider(height: 1, color: theme.dividerColor),
+                      _TxnTile(txn: list[i]),
+                    ],
+                  ],
+                );
+              },
+              loading: () => const Padding(
+                padding: EdgeInsets.all(28),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (_, __) => _EmptyTxns(message: l10n.transactionsFailed),
             ),
           ),
         ],
@@ -158,6 +166,38 @@ class WalletScreen extends StatelessWidget {
 
   static void _snack(BuildContext context, String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+}
+
+// ─────────────── لا توجد معاملات ───────────────
+class _EmptyTxns extends StatelessWidget {
+  /// النص الافتراضي يُبنى في build لأنه يحتاج context للترجمة.
+  final String? message;
+
+  const _EmptyTxns({this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.receipt_long_outlined,
+            size: 34,
+            color: MishwarakColors.lightTextMuted,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message ?? L10n.of(context).noTransactions,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: MishwarakColors.lightTextMuted,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -254,7 +294,7 @@ class _PaymentCard extends StatelessWidget {
             const Icon(Icons.add, size: 22, color: MishwarakColors.lightTextMuted),
             const SizedBox(height: 6),
             Text(
-              'إضافة بطاقة',
+              L10n.of(context).addCard,
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: MishwarakColors.lightTextMuted,
@@ -304,21 +344,21 @@ class _PaymentCard extends StatelessWidget {
             ],
           ),
           if (isCash)
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'نقدي',
-                  style: TextStyle(
+                  L10n.of(context).cash,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 Text(
-                  'الافتراضي',
-                  style: TextStyle(color: Colors.white70, fontSize: 10),
+                  L10n.of(context).defaultLabel,
+                  style: const TextStyle(color: Colors.white70, fontSize: 10),
                 ),
               ],
             )
@@ -339,20 +379,27 @@ class _PaymentCard extends StatelessWidget {
 
 // ─────────────── سطر معاملة ───────────────
 class _TxnTile extends StatelessWidget {
-  final _Txn txn;
+  final WalletTransaction txn;
 
   const _TxnTile({required this.txn});
+
+  /// أيقونة حسب نص الوصف — الجدول لا يخزّن أيقونة.
+  IconData get _icon {
+    final d = txn.description;
+    if (d.contains('رحلة')) return Icons.local_taxi_outlined;
+    if (d.contains('شحن')) return Icons.add_circle_outline;
+    if (d.contains('كوبون') || d.contains('خصم')) {
+      return Icons.local_offer_outlined;
+    }
+    if (d.contains('مكافأة') || d.contains('هدية')) return Icons.card_giftcard;
+    return txn.isCredit ? Icons.arrow_downward : Icons.arrow_upward;
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isCredit = txn.amount > 0;
-    // تنسيق يدوي للفاصلة الألفية (بدل intl لتفادي تهيئة locale)
-    final abs = txn.amount.abs().toString();
-    final formatted = abs.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+$)'),
-      (m) => '${m[1]},',
-    );
+    final isCredit = txn.isCredit;
+    final formatted = formatMoney(txn.amount);
 
     return Padding(
       padding: const EdgeInsets.all(14),
@@ -368,7 +415,7 @@ class _TxnTile extends StatelessWidget {
                   : theme.cardColor,
             ),
             child: Icon(
-              txn.icon,
+              _icon,
               size: 18,
               color: isCredit
                   ? MishwarakColors.success
@@ -382,7 +429,7 @@ class _TxnTile extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  txn.title,
+                  txn.description,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -390,7 +437,7 @@ class _TxnTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  txn.subtitle,
+                  formatDateTimeLabel(txn.createdAt),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: MishwarakColors.lightTextMuted,
                   ),

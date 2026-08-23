@@ -3,9 +3,11 @@
 // ═══════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/config/app_config.dart';
+import 'l10n/app_localizations.dart';
+import 'core/supabase/supabase_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/providers/locale_provider.dart';
@@ -14,8 +16,9 @@ import 'core/providers/theme_provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // NOTE: Firebase disabled — no firebase_options.dart / project configured yet.
-  // Re-add firebase_core + `flutterfire configure` when auth/push are needed.
+  // الاتصال بـ Supabase — لا يعطّل التطبيق إن غاب الإعداد.
+  await SupabaseService.initialize();
+  debugPrint('[مِشوارَك] ${AppConfig.summary}');
 
   // شريط الحالة شفاف
   SystemChrome.setSystemUIOverlayStyle(
@@ -52,16 +55,10 @@ class MishwarakApp extends ConsumerWidget {
       themeMode: themeMode,
 
       // ═══ اللغة والاتجاه ═══
+      // النصوص من lib/l10n/*.arb — يولّدها Flutter في صنف L10n.
       locale: locale,
-      supportedLocales: const [
-        Locale('ar', 'YE'), // عربي - اليمن
-        Locale('en', 'US'),
-      ],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      supportedLocales: L10n.supportedLocales,
+      localizationsDelegates: L10n.localizationsDelegates,
 
       // ═══ التنقل ═══
       routerConfig: router,

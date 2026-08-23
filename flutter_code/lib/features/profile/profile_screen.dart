@@ -2,9 +2,16 @@
 // profile_screen.dart - الملف الشخصي (البيانات، النقاط، الإعدادات)
 // ═══════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/formatters.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/widgets/driver_avatar.dart';
+import 'data/profile_repository.dart';
+
+/// النقاط المطلوبة للمستوى الذهبي — تُعرض كهدف في بطاقة النقاط.
+const _goldTierPoints = 3000;
 
 /// عنصر داخل قسم إعدادات.
 class _SettingItem {
@@ -23,18 +30,35 @@ class _SettingItem {
   });
 }
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = L10n.of(context);
+    final profileAsync = ref.watch(userProfileProvider);
+    final placesAsync = ref.watch(savedPlacesProvider);
+    final contactsAsync = ref.watch(emergencyContactsProvider);
+
+    final profile = profileAsync.valueOrNull;
+    final points = profile?.points ?? 0;
+    final remaining = (_goldTierPoints - points).clamp(0, _goldTierPoints);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الملف الشخصي'),
+        title: Text(l10n.profile),
         centerTitle: false,
-        actions: [TextButton(onPressed: () {}, child: const Text('تعديل'))],
+        actions: [
+          IconButton(
+            onPressed: () {
+              ref.invalidate(userProfileProvider);
+              ref.invalidate(savedPlacesProvider);
+              ref.invalidate(emergencyContactsProvider);
+            },
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
@@ -49,17 +73,25 @@ class ProfileScreen extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const DriverAvatar(size: 68, initials: 'أ'),
+                DriverAvatar(
+                  size: 68,
+                  initials: _initialsOf(profile?.fullName, profile?.phone),
+                ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('أحمد الشيباني', style: theme.textTheme.headlineMedium),
+                      Text(
+                        (profile?.fullName.isNotEmpty ?? false)
+                            ? profile!.fullName
+                            : l10n.defaultUserName,
+                        style: theme.textTheme.headlineMedium,
+                      ),
                       const SizedBox(height: 4),
                       Text(
-                        'ahmed@example.com',
+                        profile?.email ?? profile?.phone ?? '—',
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: 12,
                           color: MishwarakColors.lightTextMuted,
@@ -75,7 +107,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 3),
                           Text(
-                            '4.90',
+                            (profile?.rating ?? 5).toStringAsFixed(2),
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -84,7 +116,9 @@ class ProfileScreen extends StatelessWidget {
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
-                              '· عضو منذ 2023',
+                              profile == null
+                                  ? ''
+                                  : l10n.memberSince(profile.createdAt.year),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: MishwarakColors.lightTextMuted,
                               ),
@@ -115,33 +149,38 @@ class ProfileScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'نقاطك المتاحة',
-                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                      Text(
+                        l10n.yourPoints,
+                        style: const TextStyle(color: Colors.white70, fontSize: 11),
                       ),
                       const SizedBox(height: 2),
-                      const Text.rich(
+                      Text.rich(
                         TextSpan(
                           children: [
                             TextSpan(
-                              text: '2,450 ',
-                              style: TextStyle(
+                              text: '${formatMoney(points)} ',
+                              style: const TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
                             TextSpan(
-                              text: 'نقطة',
-                              style: TextStyle(fontSize: 13),
+                              text: l10n.points,
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ],
                         ),
-                        style: TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.white),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        '550 نقطة لمستوى ذهبي',
-                        style: TextStyle(color: Colors.white70, fontSize: 10),
+                      Text(
+                        remaining == 0
+                            ? l10n.goldReached
+                            : l10n.pointsToGold(formatMoney(remaining)),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       // شريط التقدّم
@@ -151,7 +190,7 @@ class ProfileScreen extends StatelessWidget {
                           width: 140,
                           height: 5,
                           child: LinearProgressIndicator(
-                            value: 0.8,
+                            value: (points / _goldTierPoints).clamp(0.0, 1.0),
                             backgroundColor: Colors.white.withOpacity(0.3),
                             valueColor: const AlwaysStoppedAnimation(Colors.white),
                           ),
@@ -179,58 +218,63 @@ class ProfileScreen extends StatelessWidget {
 
           // ═══ الأقسام ═══
           const SizedBox(height: 20),
-          const _SettingSection(
-            title: 'المعلومات الشخصية',
+          _SettingSection(
+            title: l10n.personalInfo,
             items: [
               _SettingItem(
                 icon: Icons.person_outline,
-                label: 'الاسم',
-                value: 'أحمد الشيباني',
+                label: l10n.name,
+                value: (profile?.fullName.isNotEmpty ?? false)
+                    ? profile!.fullName
+                    : l10n.notAddedYet,
               ),
               _SettingItem(
                 icon: Icons.phone_outlined,
-                label: 'الجوال',
-                value: '+967 77 123 4567',
-                verified: true,
+                label: l10n.phone,
+                value: profile?.phone ?? '—',
+                // الهاتف مُتحقَّق منه دائماً لأنه وسيلة تسجيل الدخول.
+                verified: profile?.phone != null,
               ),
               _SettingItem(
                 icon: Icons.mail_outline,
-                label: 'البريد',
-                value: 'ahmed@example.com',
+                label: l10n.email,
+                value: profile?.email ?? l10n.notAddedYet,
               ),
             ],
           ),
-          const _SettingSection(
-            title: 'العناوين المحفوظة',
+          _SettingSection(
+            title: l10n.savedPlaces,
             items: [
-              _SettingItem(
-                icon: Icons.home_outlined,
-                label: 'المنزل',
-                value: 'حي الشيخ عثمان، عدن',
-              ),
-              _SettingItem(
-                icon: Icons.work_outline,
-                label: 'العمل',
-                value: 'شارع كالتكس، المعلا',
-              ),
+              for (final place in placesAsync.valueOrNull ?? const <SavedPlace>[])
+                _SettingItem(
+                  icon: switch (place.label) {
+                    'home' => Icons.home_outlined,
+                    'work' => Icons.work_outline,
+                    _ => Icons.place_outlined,
+                  },
+                  label: place.name,
+                  value: place.address,
+                ),
               _SettingItem(
                 icon: Icons.add,
-                label: 'إضافة عنوان',
+                label: l10n.addAddress,
                 primary: true,
               ),
             ],
           ),
-          const _SettingSection(
-            title: 'جهات الطوارئ',
+          _SettingSection(
+            title: l10n.emergencyContacts,
             items: [
-              _SettingItem(
-                icon: Icons.person_outline,
-                label: 'والدي',
-                value: '+967 77 xxx xxxx',
-              ),
+              for (final c
+                  in contactsAsync.valueOrNull ?? const <EmergencyContact>[])
+                _SettingItem(
+                  icon: Icons.person_outline,
+                  label: c.name,
+                  value: c.phone,
+                ),
               _SettingItem(
                 icon: Icons.add,
-                label: 'إضافة جهة اتصال',
+                label: l10n.addContact,
                 primary: true,
               ),
             ],
@@ -238,6 +282,16 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// أول حرف من الاسم، أو آخر رقمين من الجوال إن لم يوجد اسم.
+  static String _initialsOf(String? fullName, String? phone) {
+    final name = fullName?.trim() ?? '';
+    if (name.isNotEmpty) return name.characters.first;
+    if (phone != null && phone.length >= 2) {
+      return phone.substring(phone.length - 2);
+    }
+    return '؟';
   }
 }
 

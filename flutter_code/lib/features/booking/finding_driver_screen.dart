@@ -4,24 +4,34 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
-import '../../shared/widgets/map_placeholder.dart';
+import '../../l10n/app_localizations.dart';
+import '../../shared/widgets/map_view.dart';
+import '../ride/data/ride_repository.dart';
 
-class FindingDriverScreen extends StatefulWidget {
-  const FindingDriverScreen({super.key});
+class FindingDriverScreen extends ConsumerStatefulWidget {
+  final String rideId;
+
+  const FindingDriverScreen({super.key, required this.rideId});
 
   @override
-  State<FindingDriverScreen> createState() => _FindingDriverScreenState();
+  ConsumerState<FindingDriverScreen> createState() =>
+      _FindingDriverScreenState();
 }
 
-class _FindingDriverScreenState extends State<FindingDriverScreen>
+class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
     with TickerProviderStateMixin {
   late final AnimationController _radar;
   late final AnimationController _dots;
-  Timer? _foundTimer;
+  Timer? _noDriverTimer;
+  bool _isCancelling = false;
+
+  /// يصبح `true` إذا مضت مهلة دون تعيين سائق (لا سائق متاح لهذا النوع).
+  bool _tookTooLong = false;
 
   @override
   void initState() {
@@ -37,28 +47,79 @@ class _FindingDriverScreenState extends State<FindingDriverScreen>
       duration: const Duration(milliseconds: 1400),
     )..repeat();
 
-    // محاكاة العثور على سائق - في الإنتاج يأتي من الـ socket
-    _foundTimer = Timer(const Duration(milliseconds: 3500), () {
-      if (mounted) context.pushReplacement(AppRoutes.active);
+    // بلا هذه المهلة تدور الشاشة إلى ما لا نهاية عندما لا يوجد سائق متاح.
+    _noDriverTimer = Timer(const Duration(seconds: 20), () {
+      if (mounted) setState(() => _tookTooLong = true);
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _matchDriver());
+  }
+
+  /// يبحث عن أقرب سائق ويُعيّنه.
+  ///
+  /// التعيين يحدّث الرحلة في القاعدة، فيصل التغيير عبر Realtime إلى
+  /// المستمع في `build` الذي ينقلنا لشاشة الرحلة — لا ننتقل من هنا
+  /// حتى يبقى مسار الانتقال واحداً.
+  Future<void> _matchDriver() async {
+    final ride = await ref.read(rideRepositoryProvider).fetchRide(widget.rideId);
+    if (ride == null || !mounted) return;
+
+    // رحلة أُلغيت أو عُيّن لها سائق مسبقاً (عودة للشاشة) — لا نطابق ثانية.
+    if (ride.driverId != null || ride.isCancelled) return;
+
+    final driver = await ref.read(rideRepositoryProvider).matchDriver(
+          rideId: widget.rideId,
+          vehicleTypeId: ride.vehicleTypeId ?? '',
+          pickupLat: ride.pickupLat,
+          pickupLng: ride.pickupLng,
+        );
+
+    // لا سائق متاح → نُظهر رسالة "تعذّر" فوراً بدل انتظار المهلة كاملة.
+    if (driver == null && mounted) {
+      _noDriverTimer?.cancel();
+      setState(() => _tookTooLong = true);
+    }
   }
 
   @override
   void dispose() {
-    _foundTimer?.cancel();
+    _noDriverTimer?.cancel();
     _radar.dispose();
     _dots.dispose();
     super.dispose();
   }
 
+  Future<void> _cancel() async {
+    setState(() => _isCancelling = true);
+    try {
+      await ref
+          .read(rideRepositoryProvider)
+          .cancelRide(widget.rideId, reason: 'ألغاها الراكب');
+    } finally {
+      if (mounted) context.go(AppRoutes.home);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = L10n.of(context);
+
+    // ينتقل تلقائياً فور تعيين سائق — الحالة تصل من القاعدة لحظياً.
+    ref.listen(rideStreamProvider(widget.rideId), (_, next) {
+      final ride = next.valueOrNull;
+      if (ride == null || !mounted) return;
+      if (ride.driverId != null && !ride.isCancelled) {
+        context.pushReplacement('${AppRoutes.active}?ride=${widget.rideId}');
+      } else if (ride.isCancelled) {
+        context.go(AppRoutes.home);
+      }
+    });
 
     return Scaffold(
       body: Stack(
         children: [
-          const MapPlaceholder(),
+          const MapView(),
 
           // ═══════════════ الرادار ═══════════════
           Align(
@@ -143,13 +204,13 @@ class _FindingDriverScreenState extends State<FindingDriverScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'نبحث لك عن أفضل سائق...',
+                    _tookTooLong ? l10n.noDriverTitle : l10n.findingDriver,
                     style: theme.textTheme.headlineLarge,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'لحظات وسنجد لك أقرب سائق متاح',
+                    _tookTooLong ? l10n.noDriverBody : l10n.findingDriverBody,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: MishwarakColors.lightTextMuted,
                     ),
@@ -194,7 +255,7 @@ class _FindingDriverScreenState extends State<FindingDriverScreen>
                     width: double.infinity,
                     height: 48,
                     child: OutlinedButton(
-                      onPressed: () => context.pop(),
+                      onPressed: _isCancelling ? null : _cancel,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: MishwarakColors.danger,
                         side: BorderSide(
@@ -205,9 +266,9 @@ class _FindingDriverScreenState extends State<FindingDriverScreen>
                           borderRadius: BorderRadius.circular(24),
                         ),
                       ),
-                      child: const Text(
-                        'إلغاء الطلب',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      child: Text(
+                        l10n.cancelRequest,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),

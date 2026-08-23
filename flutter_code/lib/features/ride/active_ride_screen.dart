@@ -1,72 +1,104 @@
 // ═══════════════════════════════════════════════════════════════
 // active_ride_screen.dart - شاشة الرحلة الجارية (تتبّع السائق)
 // ═══════════════════════════════════════════════════════════════
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/formatters.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/widgets/driver_avatar.dart';
-import '../../shared/widgets/map_placeholder.dart';
+import '../../shared/widgets/map_view.dart';
 import '../../shared/widgets/star_rating.dart';
-import 'models/driver.dart';
+import 'data/ride_repository.dart';
 
-class ActiveRideScreen extends StatefulWidget {
-  const ActiveRideScreen({super.key});
+class ActiveRideScreen extends ConsumerWidget {
+  final String rideId;
+
+  const ActiveRideScreen({super.key, required this.rideId});
+
+  /// نص الحالة مشتقّ من حالة الرحلة في القاعدة لا من مؤقّت وهمي.
+  static String _statusLabel(L10n l10n, String status) => switch (status) {
+        'driver_assigned' => l10n.statusAssigned,
+        'arriving' => l10n.statusArriving,
+        'arrived' => l10n.statusArrived,
+        'on_trip' => l10n.statusOnTrip,
+        'completed' => l10n.statusCompleted,
+        'cancelled' => l10n.statusCancelled,
+        _ => l10n.statusRequested,
+      };
+
+  /// علامات الخريطة: السائق ونقطتا الانطلاق والوجهة.
+  ///
+  /// قبل بدء الرحلة نركّز على نقطة الالتقاء، وبعدها على الوجهة —
+  /// وهي المعلومة التي تهمّ الراكب في كل مرحلة.
+  static Set<Marker> _markers(RideDetails? ride, RideDriver? driver) {
+    if (ride == null) return const {};
+
+    return {
+      if (driver?.lat != null && driver?.lng != null)
+        Marker(
+          markerId: const MarkerId('driver'),
+          position: LatLng(driver!.lat!, driver.lng!),
+          infoWindow: InfoWindow(title: driver.fullName, snippet: driver.carModel),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        ),
+      Marker(
+        markerId: const MarkerId('pickup'),
+        position: LatLng(ride.pickupLat, ride.pickupLng),
+        infoWindow: InfoWindow(title: ride.pickupAddress),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+      ),
+      Marker(
+        markerId: const MarkerId('destination'),
+        position: LatLng(ride.destLat, ride.destLng),
+        infoWindow: InfoWindow(title: ride.destAddress),
+      ),
+    };
+  }
 
   @override
-  State<ActiveRideScreen> createState() => _ActiveRideScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final l10n = L10n.of(context);
+    final rideAsync = ref.watch(rideStreamProvider(rideId));
+    final ride = rideAsync.valueOrNull;
 
-class _ActiveRideScreenState extends State<ActiveRideScreen> {
-  static const _driver = DriversRepository.mockDriver;
-
-  /// تقدّم السائق على المسار من 0 إلى 1.
-  double _progress = 0.05;
-  Timer? _ticker;
-
-  /// قبل 0.35 السائق في طريقه إليك، بعدها الرحلة بدأت.
-  bool get _isArriving => _progress < 0.35;
-
-  @override
-  void initState() {
-    super.initState();
-    // محاكاة تحرّك السائق - في الإنتاج من الـ socket
-    _ticker = Timer.periodic(const Duration(milliseconds: 200), (t) {
-      if (!mounted) return;
-      setState(() => _progress += 0.015);
-      if (_progress >= 0.98) {
-        t.cancel();
-        context.pushReplacement(AppRoutes.rating);
+    // تنتقل لشاشة التقييم فور اكتمال الرحلة في القاعدة.
+    ref.listen(rideStreamProvider(rideId), (_, next) {
+      final r = next.valueOrNull;
+      if (r == null) return;
+      if (r.isCompleted) {
+        context.pushReplacement('${AppRoutes.rating}?ride=$rideId');
+      } else if (r.isCancelled) {
+        context.go(AppRoutes.home);
       }
     });
-  }
 
-  @override
-  void dispose() {
-    _ticker?.cancel();
-    super.dispose();
-  }
+    final driver = ride?.driverId == null
+        ? null
+        : ref.watch(rideDriverProvider(ride!.driverId!)).valueOrNull;
 
-  String get _statusLabel {
-    if (_isArriving) {
-      final mins = ((0.35 - _progress) * 30).round().clamp(1, 99);
-      return 'السائق يصل خلال $mins دقائق';
-    }
-    final mins = ((1 - _progress) * 15).round().clamp(1, 99);
-    return 'في الطريق · $mins دقيقة';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // قبل الالتقاء يهمّ الراكب أين السائق؛ بعده تهمّه الوجهة.
+    final focus = ride == null
+        ? kAdenCenter
+        : ride.isArriving && driver?.lat != null
+            ? LatLng(driver!.lat!, driver.lng!)
+            : LatLng(ride.destLat, ride.destLng);
 
     return Scaffold(
       body: Stack(
         children: [
-          const MapPlaceholder(icon: Icons.navigation_outlined),
+          MapView(
+            placeholderIcon: Icons.navigation_outlined,
+            center: focus,
+            zoom: 15,
+            bottomPadding: 300,
+            markers: _markers(ride, driver),
+          ),
 
           // ═══════════════ شارة الحالة ═══════════════
           SafeArea(
@@ -92,7 +124,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                     const _BlinkingDot(),
                     const SizedBox(width: 8),
                     Text(
-                      _statusLabel,
+                      _statusLabel(l10n, ride?.status ?? 'requested'),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -115,14 +147,14 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                       icon: Icons.share_outlined,
                       color: MishwarakColors.primary,
                       background: theme.cardColor,
-                      onTap: () => _snack('تمت مشاركة رحلتك'),
+                      onTap: () => _snack(context, l10n.tripShared),
                     ),
                     const SizedBox(height: 8),
                     _RoundAction(
                       icon: Icons.shield_outlined,
                       color: Colors.white,
                       background: MishwarakColors.danger,
-                      onTap: () => _snack('تم إبلاغ جهات الطوارئ'),
+                      onTap: () => _snack(context, l10n.emergencyNotified),
                     ),
                   ],
                 ),
@@ -166,65 +198,98 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                   // ═══ بطاقة السائق ═══
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: [
-                        DriverAvatar(
-                          size: 60,
-                          initials: _driver.name.characters.first,
-                          verified: true,
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
+                    child: driver == null
+                        ? Row(
                             children: [
-                              Text(
-                                _driver.name,
-                                style: theme.textTheme.headlineSmall,
+                              const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               ),
-                              const SizedBox(height: 3),
-                              Row(
-                                children: [
-                                  StarRating(value: _driver.rating, size: 12),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '${_driver.rating}',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      '· ${_driver.completedTrips} رحلة',
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: MishwarakColors.lightTextMuted,
-                                      ),
+                              const SizedBox(width: 14),
+                              Text(
+                                l10n.loadingDriver,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: MishwarakColors.lightTextMuted,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              DriverAvatar(
+                                size: 60,
+                                initials: driver.fullName.isEmpty
+                                    ? '؟'
+                                    : driver.fullName.characters.first,
+                                verified: true,
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      driver.fullName,
+                                      style: theme.textTheme.headlineSmall,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 3),
+                                    Row(
+                                      children: [
+                                        StarRating(
+                                          value: driver.rating,
+                                          size: 12,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '${driver.rating}',
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Flexible(
+                                          child: Text(
+                                            l10n.driverTripsCount(driver.completedTrips),
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                              color: MishwarakColors
+                                                  .lightTextMuted,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              _RoundAction(
+                                icon: Icons.chat_bubble_outline_rounded,
+                                color: MishwarakColors.primary,
+                                background:
+                                    MishwarakColors.primary.withOpacity(0.12),
+                                border: true,
+                                onTap: () =>
+                                    _snack(context, l10n.chatComingSoon),
+                              ),
+                              const SizedBox(width: 8),
+                              _RoundAction(
+                                icon: Icons.phone,
+                                color: Colors.white,
+                                background: MishwarakColors.primary,
+                                onTap: () => _snack(
+                                  context,
+                                  l10n.callingDriver(driver.fullName),
+                                ),
                               ),
                             ],
                           ),
-                        ),
-                        _RoundAction(
-                          icon: Icons.chat_bubble_outline_rounded,
-                          color: MishwarakColors.primary,
-                          background: MishwarakColors.primary.withOpacity(0.12),
-                          border: true,
-                          onTap: () => _snack('المحادثة قيد الإنشاء'),
-                        ),
-                        const SizedBox(width: 8),
-                        _RoundAction(
-                          icon: Icons.phone,
-                          color: Colors.white,
-                          background: MishwarakColors.primary,
-                          onTap: () => _snack('جارِ الاتصال بـ ${_driver.name}'),
-                        ),
-                      ],
-                    ),
                   ),
 
                   // ═══ تفاصيل السيارة ═══
@@ -252,14 +317,15 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                _driver.carModel,
+                                driver?.carModel ?? '—',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                _driver.carColor,
+                                driver?.carColor ?? '',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: MishwarakColors.lightTextMuted,
                                 ),
@@ -278,7 +344,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            _driver.plateNumber,
+                            driver?.plateNumber ?? '—',
                             style: TextStyle(
                               color: theme.scaffoldBackgroundColor,
                               fontSize: 13,
@@ -335,17 +401,19 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'كريتر - موقعي',
+                                ride?.pickupAddress ?? '—',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 10),
                               Text(
-                                'جامعة عدن',
+                                ride?.destAddress ?? '—',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -356,7 +424,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'السعر',
+                              l10n.fare,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: MishwarakColors.lightTextMuted,
                               ),
@@ -365,11 +433,14 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                             RichText(
                               text: TextSpan(
                                 style: theme.textTheme.headlineSmall,
-                                children: const [
-                                  TextSpan(text: '3,800 '),
+                                children: [
                                   TextSpan(
-                                    text: 'ر.ي',
-                                    style: TextStyle(
+                                    text:
+                                        '${formatMoney(ride?.fare ?? 0)} ',
+                                  ),
+                                  TextSpan(
+                                    text: l10n.currency,
+                                    style: const TextStyle(
                                       fontSize: 10,
                                       color: MishwarakColors.lightTextMuted,
                                     ),
@@ -391,7 +462,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
     );
   }
 
-  void _snack(String msg) {
+  static void _snack(BuildContext context, String msg) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(msg)));

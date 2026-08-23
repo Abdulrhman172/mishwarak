@@ -28,14 +28,21 @@ mixin _$VehicleType {
   String get descriptionEn => throw _privateConstructorUsedError;
   int get seats => throw _privateConstructorUsedError;
   int get etaMinutes => throw _privateConstructorUsedError;
-  int get price => throw _privateConstructorUsedError; // بالريال اليمني
+  int get price =>
+      throw _privateConstructorUsedError; // السعر الأساسي بالريال اليمني
+  /// يُضرب في المسافة ويُضاف للسعر الأساسي — راجع [FareCalculator].
+  int get pricePerKm => throw _privateConstructorUsedError;
   int? get oldPrice => throw _privateConstructorUsedError;
   String? get badgeAr => throw _privateConstructorUsedError;
   String? get badgeEn => throw _privateConstructorUsedError;
   String? get imageUrl => throw _privateConstructorUsedError;
 
+  /// Serializes this VehicleType to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of VehicleType
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $VehicleTypeCopyWith<VehicleType> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -56,6 +63,7 @@ abstract class $VehicleTypeCopyWith<$Res> {
       int seats,
       int etaMinutes,
       int price,
+      int pricePerKm,
       int? oldPrice,
       String? badgeAr,
       String? badgeEn,
@@ -72,6 +80,8 @@ class _$VehicleTypeCopyWithImpl<$Res, $Val extends VehicleType>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of VehicleType
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -84,6 +94,7 @@ class _$VehicleTypeCopyWithImpl<$Res, $Val extends VehicleType>
     Object? seats = null,
     Object? etaMinutes = null,
     Object? price = null,
+    Object? pricePerKm = null,
     Object? oldPrice = freezed,
     Object? badgeAr = freezed,
     Object? badgeEn = freezed,
@@ -126,6 +137,10 @@ class _$VehicleTypeCopyWithImpl<$Res, $Val extends VehicleType>
           ? _value.price
           : price // ignore: cast_nullable_to_non_nullable
               as int,
+      pricePerKm: null == pricePerKm
+          ? _value.pricePerKm
+          : pricePerKm // ignore: cast_nullable_to_non_nullable
+              as int,
       oldPrice: freezed == oldPrice
           ? _value.oldPrice
           : oldPrice // ignore: cast_nullable_to_non_nullable
@@ -164,6 +179,7 @@ abstract class _$$VehicleTypeImplCopyWith<$Res>
       int seats,
       int etaMinutes,
       int price,
+      int pricePerKm,
       int? oldPrice,
       String? badgeAr,
       String? badgeEn,
@@ -178,6 +194,8 @@ class __$$VehicleTypeImplCopyWithImpl<$Res>
       _$VehicleTypeImpl _value, $Res Function(_$VehicleTypeImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of VehicleType
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -190,6 +208,7 @@ class __$$VehicleTypeImplCopyWithImpl<$Res>
     Object? seats = null,
     Object? etaMinutes = null,
     Object? price = null,
+    Object? pricePerKm = null,
     Object? oldPrice = freezed,
     Object? badgeAr = freezed,
     Object? badgeEn = freezed,
@@ -232,6 +251,10 @@ class __$$VehicleTypeImplCopyWithImpl<$Res>
           ? _value.price
           : price // ignore: cast_nullable_to_non_nullable
               as int,
+      pricePerKm: null == pricePerKm
+          ? _value.pricePerKm
+          : pricePerKm // ignore: cast_nullable_to_non_nullable
+              as int,
       oldPrice: freezed == oldPrice
           ? _value.oldPrice
           : oldPrice // ignore: cast_nullable_to_non_nullable
@@ -265,6 +288,7 @@ class _$VehicleTypeImpl implements _VehicleType {
       required this.seats,
       required this.etaMinutes,
       required this.price,
+      this.pricePerKm = 0,
       this.oldPrice,
       this.badgeAr,
       this.badgeEn,
@@ -291,7 +315,11 @@ class _$VehicleTypeImpl implements _VehicleType {
   final int etaMinutes;
   @override
   final int price;
-// بالريال اليمني
+// السعر الأساسي بالريال اليمني
+  /// يُضرب في المسافة ويُضاف للسعر الأساسي — راجع [FareCalculator].
+  @override
+  @JsonKey()
+  final int pricePerKm;
   @override
   final int? oldPrice;
   @override
@@ -303,7 +331,7 @@ class _$VehicleTypeImpl implements _VehicleType {
 
   @override
   String toString() {
-    return 'VehicleType(id: $id, category: $category, nameAr: $nameAr, nameEn: $nameEn, descriptionAr: $descriptionAr, descriptionEn: $descriptionEn, seats: $seats, etaMinutes: $etaMinutes, price: $price, oldPrice: $oldPrice, badgeAr: $badgeAr, badgeEn: $badgeEn, imageUrl: $imageUrl)';
+    return 'VehicleType(id: $id, category: $category, nameAr: $nameAr, nameEn: $nameEn, descriptionAr: $descriptionAr, descriptionEn: $descriptionEn, seats: $seats, etaMinutes: $etaMinutes, price: $price, pricePerKm: $pricePerKm, oldPrice: $oldPrice, badgeAr: $badgeAr, badgeEn: $badgeEn, imageUrl: $imageUrl)';
   }
 
   @override
@@ -324,6 +352,8 @@ class _$VehicleTypeImpl implements _VehicleType {
             (identical(other.etaMinutes, etaMinutes) ||
                 other.etaMinutes == etaMinutes) &&
             (identical(other.price, price) || other.price == price) &&
+            (identical(other.pricePerKm, pricePerKm) ||
+                other.pricePerKm == pricePerKm) &&
             (identical(other.oldPrice, oldPrice) ||
                 other.oldPrice == oldPrice) &&
             (identical(other.badgeAr, badgeAr) || other.badgeAr == badgeAr) &&
@@ -332,7 +362,7 @@ class _$VehicleTypeImpl implements _VehicleType {
                 other.imageUrl == imageUrl));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -345,12 +375,15 @@ class _$VehicleTypeImpl implements _VehicleType {
       seats,
       etaMinutes,
       price,
+      pricePerKm,
       oldPrice,
       badgeAr,
       badgeEn,
       imageUrl);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of VehicleType
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$VehicleTypeImplCopyWith<_$VehicleTypeImpl> get copyWith =>
@@ -375,6 +408,7 @@ abstract class _VehicleType implements VehicleType {
       required final int seats,
       required final int etaMinutes,
       required final int price,
+      final int pricePerKm,
       final int? oldPrice,
       final String? badgeAr,
       final String? badgeEn,
@@ -400,8 +434,11 @@ abstract class _VehicleType implements VehicleType {
   @override
   int get etaMinutes;
   @override
-  int get price;
-  @override // بالريال اليمني
+  int get price; // السعر الأساسي بالريال اليمني
+  /// يُضرب في المسافة ويُضاف للسعر الأساسي — راجع [FareCalculator].
+  @override
+  int get pricePerKm;
+  @override
   int? get oldPrice;
   @override
   String? get badgeAr;
@@ -409,8 +446,11 @@ abstract class _VehicleType implements VehicleType {
   String? get badgeEn;
   @override
   String? get imageUrl;
+
+  /// Create a copy of VehicleType
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$VehicleTypeImplCopyWith<_$VehicleTypeImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

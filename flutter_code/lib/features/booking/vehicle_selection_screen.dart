@@ -2,37 +2,125 @@
 // vehicle_selection_screen.dart - شاشة اختيار نوع المركبة
 // ═══════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
-import '../../shared/widgets/map_placeholder.dart';
+import '../../core/utils/formatters.dart';
+import '../../core/location/location_provider.dart';
+import '../../core/location/location_service.dart';
+import '../../l10n/app_localizations.dart';
+import 'data/fare_calculator.dart';
+import '../../shared/widgets/map_view.dart';
 import '../../shared/widgets/route_dots.dart';
+import '../ride/data/ride_repository.dart';
+import 'data/vehicle_type_repository.dart';
 import 'models/vehicle_type.dart';
 
-class VehicleSelectionScreen extends StatefulWidget {
-  const VehicleSelectionScreen({super.key});
+class VehicleSelectionScreen extends ConsumerStatefulWidget {
+  final String destName;
+  final String destAddress;
+  final double destLat;
+  final double destLng;
+
+  const VehicleSelectionScreen({
+    super.key,
+    required this.destName,
+    required this.destAddress,
+    required this.destLat,
+    required this.destLng,
+  });
 
   @override
-  State<VehicleSelectionScreen> createState() => _VehicleSelectionScreenState();
+  ConsumerState<VehicleSelectionScreen> createState() =>
+      _VehicleSelectionScreenState();
 }
 
-class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
+class _VehicleSelectionScreenState
+    extends ConsumerState<VehicleSelectionScreen> {
   int _selectedIndex = 1; // "مريح" افتراضياً (كما في التصميم)
   String _paymentMethod = 'wallet';
+  bool _isRequesting = false;
 
-  final List<VehicleType> _vehicles = VehicleTypesRepository.mockVehicles;
+  /// المسافة بين موقع الراكب والوجهة — أساس حساب الأجرة.
+  ///
+  /// تعود صفراً قبل وصول الموقع أو حين تكون الوجهة بلا إحداثيات،
+  /// فتُعرض الأسعار الأساسية دون أجرة مسافة.
+  double get _tripDistanceKm {
+    final loc = ref.read(locationProvider).valueOrNull;
+    if (loc == null || widget.destLat == 0 || widget.destLng == 0) return 0;
+
+    return LocationService.distanceKm(
+      startLat: loc.lat,
+      startLng: loc.lng,
+      endLat: widget.destLat,
+      endLng: widget.destLng,
+    );
+  }
+
+  /// ينشئ الرحلة في القاعدة ثم ينتقل لشاشة البحث عن سائق.
+  Future<void> _confirm(VehicleType vehicle) async {
+    setState(() => _isRequesting = true);
+
+    // الموقع الحقيقي إن توفّر، وإلا مركز عدن حتى لا يفشل الطلب.
+    final loc = ref.read(locationProvider).valueOrNull;
+    final fare = FareCalculator.estimate(
+      vehicle: vehicle,
+      distanceKm: _tripDistanceKm,
+    );
+
+    try {
+      final rideId = await ref.read(rideRepositoryProvider).requestRide(
+            vehicleTypeId: vehicle.id,
+            pickupAddress: loc?.label ?? L10n.of(context).myLocation,
+            pickupLat: loc?.lat ?? 12.7794,
+            pickupLng: loc?.lng ?? 45.0367,
+            destAddress: widget.destAddress.isEmpty
+                ? widget.destName
+                : widget.destAddress,
+            destLat: widget.destLat,
+            destLng: widget.destLng,
+            estimatedFare: fare.total,
+            baseFare: fare.baseFare,
+            distanceFare: fare.distanceFare,
+            distanceKm: fare.distanceKm,
+            paymentMethod: _paymentMethod,
+          );
+
+      if (!mounted) return;
+      context.push('${AppRoutes.finding}?ride=$rideId');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(L10n.of(context).requestFailed)),
+      );
+    } finally {
+      if (mounted) setState(() => _isRequesting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final selected = _vehicles[_selectedIndex];
+    final l10n = L10n.of(context);
+    final vehiclesAsync = ref.watch(vehicleTypesProvider);
+    final vehicles = vehiclesAsync.valueOrNull ?? const <VehicleType>[];
+
+    // نراقب الموقع هنا ليُعاد الحساب فور وصوله وتتحدّث الأسعار.
+    ref.watch(locationProvider);
+    final distanceKm = _tripDistanceKm;
+
+    // القائمة تصل غير متزامنة، فقد يتجاوز الفهرس الافتراضي طولها.
+    final selectedIndex =
+        vehicles.isEmpty ? 0 : _selectedIndex.clamp(0, vehicles.length - 1);
+    final selected = vehicles.isEmpty ? null : vehicles[selectedIndex];
 
     return Scaffold(
       body: Stack(
         children: [
           // ═══════════════ الخريطة ═══════════════
-          const MapPlaceholder(icon: Icons.route_outlined),
+          const MapView(placeholderIcon: Icons.route_outlined),
 
           // ═══════════════ الشريط العلوي ═══════════════
           SafeArea(
@@ -72,17 +160,23 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  'موقعي',
+                                  ref
+                                          .watch(locationProvider)
+                                          .valueOrNull
+                                          ?.label ??
+                                      l10n.myLocation,
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'جامعة عدن',
+                                  widget.destName,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     fontWeight: FontWeight.w700,
                                   ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
@@ -139,11 +233,18 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('اختر مركبتك',
+                              Text(l10n.chooseVehicle,
                                   style: theme.textTheme.headlineMedium),
                               const SizedBox(height: 2),
                               Text(
-                                '${_vehicles.length} خيارات متاحة',
+                                vehiclesAsync.isLoading
+                                    ? l10n.loadingOptions
+                                    : distanceKm > 0
+                                        ? l10n.optionsWithDistance(
+                                            vehicles.length,
+                                            distanceKm.toStringAsFixed(1),
+                                          )
+                                        : l10n.optionsCount(vehicles.length),
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: MishwarakColors.lightTextMuted,
                                 ),
@@ -158,16 +259,25 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
 
                   // قائمة المركبات
                   Flexible(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      itemCount: _vehicles.length,
-                      itemBuilder: (context, i) => _VehicleCard(
-                        vehicle: _vehicles[i],
-                        selected: _selectedIndex == i,
-                        onTap: () => setState(() => _selectedIndex = i),
-                      ),
-                    ),
+                    child: vehiclesAsync.isLoading
+                        ? const Padding(
+                            padding: EdgeInsets.all(32),
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            itemCount: vehicles.length,
+                            itemBuilder: (context, i) => _VehicleCard(
+                              vehicle: vehicles[i],
+                              fare: FareCalculator.estimate(
+                                vehicle: vehicles[i],
+                                distanceKm: distanceKm,
+                              ),
+                              selected: selectedIndex == i,
+                              onTap: () => setState(() => _selectedIndex = i),
+                            ),
+                          ),
                   ),
 
                   // الدفع + زر التأكيد
@@ -184,7 +294,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                           children: [
                             _PaymentChip(
                               icon: Icons.account_balance_wallet_outlined,
-                              label: 'محفظة',
+                              label: l10n.wallet,
                               iconColor: MishwarakColors.primary,
                               selected: _paymentMethod == 'wallet',
                               onTap: () =>
@@ -193,7 +303,7 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                             const SizedBox(width: 8),
                             _PaymentChip(
                               icon: Icons.payments_outlined,
-                              label: 'نقدي',
+                              label: l10n.cash,
                               iconColor: MishwarakColors.success,
                               selected: _paymentMethod == 'cash',
                               onTap: () =>
@@ -208,21 +318,35 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                           width: double.infinity,
                           height: 54,
                           child: ElevatedButton(
-                            onPressed: () => context.push(AppRoutes.finding),
+                            onPressed: selected == null || _isRequesting
+                                ? null
+                                : () => _confirm(selected),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: MishwarakColors.primary,
+                              disabledBackgroundColor: theme.dividerColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(27),
                               ),
                             ),
                             // الأسماء الطويلة (مثل "سائقة للنساء") مع السعر
                             // تتجاوز عرض الزر على الشاشات الضيقة، لذا Flexible.
-                            child: Row(
+                            child: _isRequesting
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Flexible(
                                   child: Text(
-                                    'اطلب ${selected.nameAr}',
+                                    selected == null
+                                        ? l10n.loading
+                                        : l10n.orderVehicle(selected.nameAr),
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontSize: 16,
@@ -231,17 +355,18 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
                                     ),
                                   ),
                                 ),
-                                Flexible(
-                                  child: Text(
-                                    '  · ${_formatPrice(selected.price)} ر.ي',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white.withOpacity(0.7),
+                                if (selected != null)
+                                  Flexible(
+                                    child: Text(
+                                      '  · ${formatMoney(selected.price)} ر.ي',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white.withOpacity(0.7),
+                                      ),
                                     ),
                                   ),
-                                ),
                               ],
                             ),
                           ),
@@ -257,17 +382,6 @@ class _VehicleSelectionScreenState extends State<VehicleSelectionScreen> {
       ),
     );
   }
-}
-
-/// تنسيق السعر بفواصل الآلاف (مثال: 2500 → "2,500").
-String _formatPrice(int price) {
-  final s = price.toString();
-  final buf = StringBuffer();
-  for (int i = 0; i < s.length; i++) {
-    if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-    buf.write(s[i]);
-  }
-  return buf.toString();
 }
 
 /// أيقونة تمثّل فئة المركبة (بدل رسوم SVG).
@@ -289,11 +403,16 @@ IconData _iconForCategory(VehicleCategory c) {
 // ═══════════════ بطاقة المركبة ═══════════════
 class _VehicleCard extends StatelessWidget {
   final VehicleType vehicle;
+
+  /// الأجرة المحسوبة لهذه المركبة على مسافة الرحلة.
+  final FareBreakdown fare;
+
   final bool selected;
   final VoidCallback onTap;
 
   const _VehicleCard({
     required this.vehicle,
+    required this.fare,
     required this.selected,
     required this.onTap,
   });
@@ -387,20 +506,20 @@ class _VehicleCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  _formatPrice(vehicle.price),
+                  formatMoney(fare.total),
                   style: theme.textTheme.headlineSmall
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 if (vehicle.oldPrice != null)
                   Text(
-                    _formatPrice(vehicle.oldPrice!),
+                    formatMoney(vehicle.oldPrice!),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: MishwarakColors.lightTextLight,
                       decoration: TextDecoration.lineThrough,
                     ),
                   ),
                 Text(
-                  'ر.ي',
+                  L10n.of(context).currency,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: MishwarakColors.lightTextMuted,
                   ),
@@ -454,7 +573,7 @@ class _ScheduleButton extends StatelessWidget {
       onPressed: onTap,
       icon: const Icon(Icons.schedule, size: 14, color: MishwarakColors.primary),
       label: Text(
-        'حجز مسبق',
+        L10n.of(context).schedule,
         style: theme.textTheme.labelMedium
             ?.copyWith(fontWeight: FontWeight.w700),
       ),
@@ -544,7 +663,7 @@ class _PromoChip extends StatelessWidget {
                 size: 16, color: MishwarakColors.accent),
             const SizedBox(width: 6),
             Text(
-              'كوبون',
+              L10n.of(context).coupon,
               style: theme.textTheme.labelMedium
                   ?.copyWith(fontWeight: FontWeight.w700),
             ),

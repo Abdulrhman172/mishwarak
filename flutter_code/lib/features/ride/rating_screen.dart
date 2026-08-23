@@ -2,54 +2,68 @@
 // rating_screen.dart - نهاية الرحلة وتقييم السائق
 // ═══════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/formatters.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/widgets/driver_avatar.dart';
 import '../../shared/widgets/star_rating.dart';
-import 'models/driver.dart';
+import 'data/ride_repository.dart';
 
-class RatingScreen extends StatefulWidget {
-  const RatingScreen({super.key});
+class RatingScreen extends ConsumerStatefulWidget {
+  final String rideId;
+
+  const RatingScreen({super.key, required this.rideId});
 
   @override
-  State<RatingScreen> createState() => _RatingScreenState();
+  ConsumerState<RatingScreen> createState() => _RatingScreenState();
 }
 
-class _RatingScreenState extends State<RatingScreen> {
-  static const _driver = DriversRepository.mockDriver;
-
-  static const _goodTags = [
-    'قيادة آمنة',
-    'سيارة نظيفة',
-    'كلام لطيف',
-    'في الموعد',
-    'طريق سريع',
-    'موسيقى جيدة',
-  ];
-  static const _badTags = [
-    'قيادة متهورة',
-    'سيارة متسخة',
-    'غير مهذب',
-    'تأخر كثيراً',
-  ];
+class _RatingScreenState extends ConsumerState<RatingScreen> {
   static const _tips = [0, 200, 500, 1000];
 
   int _rating = 0;
   final Set<String> _selectedTags = {};
   int _tip = 0;
+  bool _isSubmitting = false;
+
+  /// الوسوم الإيجابية — نصوص مترجَمة، لذا دالة لا قائمة ثابتة.
+  static List<String> _goodTags(L10n l10n) => [
+        l10n.tagSafeDriving,
+        l10n.tagCleanCar,
+        l10n.tagFriendly,
+        l10n.tagOnTime,
+        l10n.tagFastRoute,
+        l10n.tagGoodMusic,
+      ];
+
+  static List<String> _badTags(L10n l10n) => [
+        l10n.tagReckless,
+        l10n.tagDirtyCar,
+        l10n.tagRude,
+        l10n.tagVeryLate,
+      ];
 
   /// الوسوم تتبدّل حسب التقييم: 4+ إيجابية، أقل سلبية.
-  List<String> get _currentTags {
+  List<String> _currentTags(L10n l10n) {
     if (_rating == 0) return const [];
-    return _rating >= 4 ? _goodTags : _badTags;
+    return _rating >= 4 ? _goodTags(l10n) : _badTags(l10n);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final canSubmit = _rating > 0;
+    final l10n = L10n.of(context);
+    final canSubmit = _rating > 0 && !_isSubmitting;
+
+    final ride = ref.watch(rideStreamProvider(widget.rideId)).valueOrNull;
+    final driver = ride?.driverId == null
+        ? null
+        : ref.watch(rideDriverProvider(ride!.driverId!)).valueOrNull;
+    final driverName = driver?.fullName ?? l10n.driver;
 
     return Scaffold(
       body: SafeArea(
@@ -75,10 +89,10 @@ class _RatingScreenState extends State<RatingScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    Text('وصلت بسلامة!', style: theme.textTheme.headlineLarge),
+                    Text(l10n.tripDone, style: theme.textTheme.headlineLarge),
                     const SizedBox(height: 4),
                     Text(
-                      'نتمنى لك يوماً سعيداً 🌟',
+                      l10n.tripDoneBody,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: MishwarakColors.lightTextMuted,
                       ),
@@ -98,15 +112,18 @@ class _RatingScreenState extends State<RatingScreen> {
                       ),
                       child: Column(
                         children: [
-                          const _FareRow(label: 'السعر الأساسي', value: '3,500 ر.ي'),
-                          const SizedBox(height: 8),
-                          const _FareRow(label: 'المسافة (7.2 كم)', value: '+800'),
-                          const SizedBox(height: 8),
-                          const _FareRow(
-                            label: 'خصم كوبون',
-                            value: '-500',
-                            highlight: MishwarakColors.success,
+                          _FareRow(
+                            label: l10n.tripFare,
+                            value: '${formatMoney(ride?.fare ?? 0)} ${l10n.currency}',
                           ),
+                          if (_tip > 0) ...[
+                            const SizedBox(height: 8),
+                            _FareRow(
+                              label: l10n.tip,
+                              value: '+${formatMoney(_tip)}',
+                              highlight: MishwarakColors.success,
+                            ),
+                          ],
                           Padding(
                             padding: const EdgeInsets.only(top: 10, bottom: 2),
                             child: Divider(height: 1, color: theme.dividerColor),
@@ -115,18 +132,21 @@ class _RatingScreenState extends State<RatingScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('الإجمالي', style: theme.textTheme.labelLarge),
+                              Text(l10n.total, style: theme.textTheme.labelLarge),
                               RichText(
                                 text: TextSpan(
                                   style: theme.textTheme.displaySmall?.copyWith(
                                     fontSize: 20,
                                     color: MishwarakColors.primary,
                                   ),
-                                  children: const [
-                                    TextSpan(text: '3,800 '),
+                                  children: [
                                     TextSpan(
-                                      text: 'ر.ي',
-                                      style: TextStyle(
+                                      text:
+                                          '${formatMoney((ride?.fare ?? 0) + _tip)} ',
+                                    ),
+                                    TextSpan(
+                                      text: l10n.currency,
+                                      style: const TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                         color: MishwarakColors.lightTextMuted,
@@ -145,12 +165,14 @@ class _RatingScreenState extends State<RatingScreen> {
                     const SizedBox(height: 24),
                     DriverAvatar(
                       size: 70,
-                      initials: _driver.name.characters.first,
+                      initials:
+                          driverName.isEmpty ? '؟' : driverName.characters.first,
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'كيف كانت رحلتك مع ${_driver.name.split(' ').first}؟',
+                      l10n.rateQuestion(driverName.split(' ').first),
                       style: theme.textTheme.headlineSmall,
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 14),
                     StarRatingInput(
@@ -172,7 +194,7 @@ class _RatingScreenState extends State<RatingScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _rating >= 4 ? 'ما الذي أعجبك؟' : 'ما الذي أزعجك؟',
+                              _rating >= 4 ? l10n.whatYouLiked : l10n.whatWentWrong,
                               style: theme.textTheme.labelMedium?.copyWith(
                                 color: MishwarakColors.lightTextMuted,
                               ),
@@ -182,7 +204,7 @@ class _RatingScreenState extends State<RatingScreen> {
                               spacing: 8,
                               runSpacing: 8,
                               children: [
-                                for (final tag in _currentTags)
+                                for (final tag in _currentTags(l10n))
                                   _TagChip(
                                     label: tag,
                                     selected: _selectedTags.contains(tag),
@@ -207,7 +229,7 @@ class _RatingScreenState extends State<RatingScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'أضف إكرامية للسائق',
+                              l10n.addTip,
                               style: theme.textTheme.labelMedium?.copyWith(
                                 color: MishwarakColors.lightTextMuted,
                               ),
@@ -218,7 +240,7 @@ class _RatingScreenState extends State<RatingScreen> {
                                 for (final t in _tips) ...[
                                   Expanded(
                                     child: _TipButton(
-                                      label: t == 0 ? 'لا شكراً' : '$t',
+                                      label: t == 0 ? l10n.noTip : '$t',
                                       selected: _tip == t,
                                       onTap: () => setState(() => _tip = t),
                                     ),
@@ -252,7 +274,16 @@ class _RatingScreenState extends State<RatingScreen> {
                     elevation: canSubmit ? 6 : 0,
                     shadowColor: MishwarakColors.primary.withOpacity(0.4),
                   ),
-                  child: const Text('إرسال التقييم'),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(l10n.submitRating),
                 ),
               ),
             ),
@@ -262,13 +293,35 @@ class _RatingScreenState extends State<RatingScreen> {
     );
   }
 
-  void _submit() {
-    // TODO: إرسال التقييم إلى الـ API
-    final tipText = _tip > 0 ? ' مع إكرامية $_tip ر.ي' : '';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('شكراً لك! تم إرسال تقييمك ($_rating نجوم)$tipText')),
-    );
-    context.go(AppRoutes.home);
+  Future<void> _submit() async {
+    setState(() => _isSubmitting = true);
+    try {
+      await ref.read(rideRepositoryProvider).submitRating(
+            rideId: widget.rideId,
+            rating: _rating,
+            tags: _selectedTags.toList(),
+            tip: _tip,
+          );
+      if (!mounted) return;
+
+      // السجل يعرض التقييم، فنُبطل ذاكرته حتى يظهر فوراً.
+      ref.invalidate(rideHistoryProvider);
+
+      final l10n = L10n.of(context);
+      final tipText = _tip > 0
+          ? l10n.ratingSentTipSuffix(formatMoney(_tip), l10n.currency)
+          : '';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${l10n.ratingSent(_rating)}$tipText')),
+      );
+      context.go(AppRoutes.home);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(L10n.of(context).ratingFailed)),
+      );
+    }
   }
 }
 

@@ -3,6 +3,7 @@
 // دون استثناءات (overflow، أخطاء بناء، ويدجت مفقود).
 // ═══════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mishwarak/core/theme/app_theme.dart';
@@ -13,12 +14,21 @@ import 'package:mishwarak/features/onboarding/onboarding_screen.dart';
 import 'package:mishwarak/features/profile/profile_screen.dart';
 import 'package:mishwarak/features/ride/rating_screen.dart';
 import 'package:mishwarak/features/wallet/wallet_screen.dart';
+import 'package:mishwarak/l10n/app_localizations.dart';
 
 /// يغلّف الشاشة بثيم التطبيق واتجاه RTL على مقاس هاتف.
-Widget _wrap(Widget screen) => MaterialApp(
-      theme: AppTheme.light,
-      locale: const Locale('ar', 'YE'),
-      home: Directionality(textDirection: TextDirection.rtl, child: screen),
+///
+/// بلا إعداد Supabase ترجع المستودعات لبياناتها الوهمية، فتُبنى
+/// الشاشات في الاختبار دون شبكة. localizationsDelegates ضرورية الآن
+/// لأن الشاشات تستدعي L10n.of(context) مباشرة.
+Widget _wrap(Widget screen) => ProviderScope(
+      child: MaterialApp(
+        theme: AppTheme.light,
+        locale: const Locale('ar', 'YE'),
+        supportedLocales: L10n.supportedLocales,
+        localizationsDelegates: L10n.localizationsDelegates,
+        home: Directionality(textDirection: TextDirection.rtl, child: screen),
+      ),
     );
 
 void main() {
@@ -36,7 +46,7 @@ void main() {
   }
 
   testWidgets('شاشة اختيار المركبة تعرض الأنواع والسعر', (tester) async {
-    await pumpPhone(tester, const VehicleSelectionScreen());
+    await pumpPhone(tester, const VehicleSelectionScreen(destName: 'جامعة عدن', destAddress: 'خور مكسر', destLat: 12.79, destLng: 45.03));
 
     expect(find.text('اختر مركبتك'), findsOneWidget);
     expect(find.text('اقتصادي'), findsOneWidget);
@@ -47,7 +57,7 @@ void main() {
   });
 
   testWidgets('شاشة التقييم: الوسوم تظهر بعد اختيار النجوم', (tester) async {
-    await pumpPhone(tester, const RatingScreen());
+    await pumpPhone(tester, const RatingScreen(rideId: 'test-ride'));
 
     expect(find.text('وصلت بسلامة!'), findsOneWidget);
     expect(find.text('الإجمالي'), findsOneWidget);
@@ -63,7 +73,7 @@ void main() {
   });
 
   testWidgets('شاشة التقييم: تقييم منخفض يعرض وسوماً سلبية', (tester) async {
-    await pumpPhone(tester, const RatingScreen());
+    await pumpPhone(tester, const RatingScreen(rideId: 'test-ride'));
 
     // أول نجمة = تقييم 1
     await tester.tap(find.byIcon(Icons.star_border_rounded).first);
@@ -75,52 +85,51 @@ void main() {
     expect(find.text('أضف إكرامية للسائق'), findsNothing);
   });
 
-  testWidgets('المحفظة تعرض الرصيد وطرق الدفع والمعاملات', (tester) async {
+  // ─────────────────────────────────────────────────────────────
+  // الشاشات التالية تقرأ من Supabase. بلا إعداد ترجع قوائم فارغة،
+  // فنتحقق أن الحالة الفارغة تُعرض بهدوء دون انهيار — وهو السلوك
+  // الذي يراه المستخدم عند انقطاع الشبكة أيضاً.
+  // ─────────────────────────────────────────────────────────────
+
+  testWidgets('المحفظة تعرض هيكلها وحالة "لا معاملات"', (tester) async {
     await pumpPhone(tester, const WalletScreen());
 
     expect(find.text('الرصيد الحالي'), findsOneWidget);
     expect(find.text('طرق الدفع'), findsOneWidget);
     expect(find.text('نقدي'), findsOneWidget);
-    expect(find.text('آخر المعاملات'), findsOneWidget);
-    expect(find.text('شحن المحفظة'), findsOneWidget);
+    expect(find.text('لا توجد معاملات بعد'), findsOneWidget);
   });
 
-  testWidgets('سجل الرحلات يعرض الإحصائيات والرحلات', (tester) async {
+  testWidgets('سجل الرحلات يعرض حالة فارغة بلا بيانات', (tester) async {
     await pumpPhone(tester, const HistoryScreen());
 
     expect(find.text('رحلاتي'), findsOneWidget);
-    expect(find.text('47'), findsOneWidget); // عدد الرحلات
-    expect(find.text('جامعة عدن'), findsWidgets);
-    expect(find.text('ملغاة'), findsOneWidget); // الرحلة الملغاة
+    // لا رحلات وهمية بعد الآن — السجل يأتي من القاعدة
+    expect(find.text('ملغاة'), findsNothing);
   });
 
-  testWidgets('الملف الشخصي يعرض البيانات والنقاط', (tester) async {
+  testWidgets('الملف الشخصي يعرض بطاقة النقاط', (tester) async {
     await pumpPhone(tester, const ProfileScreen());
 
-    expect(find.text('أحمد الشيباني'), findsWidgets);
+    expect(find.text('الملف الشخصي'), findsOneWidget);
     expect(find.text('نقاطك المتاحة'), findsOneWidget);
-    expect(find.text('العناوين المحفوظة'), findsOneWidget);
-    expect(find.text('جهات الطوارئ'), findsOneWidget);
   });
 
-  testWidgets('الإشعارات: "تحديد الكل مقروء" يزيل نقاط غير المقروء',
-      (tester) async {
+  testWidgets('الإشعارات تعرض حالة فارغة وزر التحديد معطّل', (tester) async {
     await pumpPhone(tester, const NotificationsScreen());
 
-    expect(find.text('كوبون خصم 30%'), findsOneWidget);
+    expect(find.text('لا توجد إشعارات'), findsOneWidget);
 
+    // بلا إشعارات غير مقروءة يكون الزر معطّلاً
     final markAll = find.text('تحديد الكل مقروء');
-    expect(tester.widget<TextButton>(
-      find.ancestor(of: markAll, matching: find.byType(TextButton)),
-    ).onPressed, isNotNull);
-
-    await tester.tap(markAll);
-    await tester.pumpAndSettle();
-
-    // بعد التحديد يصبح الزر معطّلاً (لا يوجد غير مقروء)
-    expect(tester.widget<TextButton>(
-      find.ancestor(of: markAll, matching: find.byType(TextButton)),
-    ).onPressed, isNull);
+    expect(
+      tester
+          .widget<TextButton>(
+            find.ancestor(of: markAll, matching: find.byType(TextButton)),
+          )
+          .onPressed,
+      isNull,
+    );
   });
 
   testWidgets('التعريف بالتطبيق: التنقل بين الشرائح', (tester) async {

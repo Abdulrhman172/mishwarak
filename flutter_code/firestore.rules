@@ -1,0 +1,134 @@
+rules_version = '2';
+
+// ═══════════════════════════════════════════════════════════════
+// قواعد أمان Firestore - مِشوارَك
+// المبدأ: الراكب يقرأ/يكتب بياناته فقط. الأموال وحالة الرحلة
+// لا تُكتب من التطبيق إطلاقاً - فقط من Cloud Functions (Admin SDK
+// يتجاوز هذه القواعد، لذا منع الكتابة هنا آمن).
+// ═══════════════════════════════════════════════════════════════
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────── دوال مساعدة ───────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // يمنع العميل من تغيير حقول محميّة عند التحديث
+    function keepsFields(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+                .hasAny(fields.toSet());
+    }
+
+    // ─────────── الملف الشخصي ───────────
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid)
+                    // لا يمنح المستخدم نفسه نقاطاً أو تقييماً عند التسجيل
+                    && request.resource.data.points == 0
+                    && request.resource.data.rating == 0;
+      allow update: if isOwner(uid)
+                    && keepsFields(['points', 'tier', 'rating', 'createdAt']);
+      allow delete: if false; // الحذف عبر دالة سحابية لتنظيف البيانات المرتبطة
+
+      // العناوين المحفوظة (المنزل/العمل/...)
+      match /addresses/{addressId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // جهات الطوارئ
+      match /emergency_contacts/{contactId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // ─────────── السائقون ───────────
+    // القراءة عامة للمستخدمين المسجلين (لعرض بطاقة السائق والتتبع).
+    // الكتابة من تطبيق السائق/الخادم فقط - ليست من تطبيق الراكب.
+    match /drivers/{driverId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // ─────────── أنواع المركبات ───────────
+    // كتالوج عام للقراءة، يُدار من لوحة التحكم.
+    match /vehicle_types/{typeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ─────────── الرحلات ───────────
+    match /rides/{rideId} {
+      // الراكب صاحب الرحلة أو السائق المُعيَّن لها
+      function isParticipant() {
+        return isSignedIn() && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.driverId == request.auth.uid
+        );
+      }
+
+      allow read: if isParticipant();
+
+      // إنشاء الطلب: الراكب هو نفسه، والحالة الابتدائية فقط،
+      // والأجرة لا تُحدَّد من العميل (تُحسب في الخادم).
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status == 'requested'
+                    && !('fare' in request.resource.data)
+                    && !('driverId' in request.resource.data);
+
+      // التحديث المسموح للراكب: الإلغاء والتقييم فقط.
+      allow update: if isParticipant()
+                    && keepsFields([
+                         'userId', 'driverId', 'fare',
+                         'requestedAt', 'startedAt', 'completedAt'
+                       ]);
+
+      allow delete: if false;
+    }
+
+    // ─────────── تتبّع الرحلة الحيّ ───────────
+    // موقع السائق يُكتب من تطبيق السائق/الخادم، ويُقرأ من الراكب.
+    match /ride_tracking/{rideId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // ─────────── المحفظة ───────────
+    // القراءة للمالك فقط. الرصيد لا يُكتب من التطبيق أبداً.
+    match /wallets/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+
+      match /transactions/{txnId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+    }
+
+    // ─────────── الإشعارات ───────────
+    match /notifications/{uid}/items/{notifId} {
+      allow read: if isOwner(uid);
+      // المسموح للعميل: تعليم الإشعار كمقروء فقط.
+      allow update: if isOwner(uid)
+                    && request.resource.data.diff(resource.data)
+                         .affectedKeys().hasOnly(['read', 'readAt']);
+      allow create, delete: if false;
+    }
+
+    // ─────────── أكواد الخصم ───────────
+    match /promos/{code} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // ─────────── منع أي شيء آخر ───────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

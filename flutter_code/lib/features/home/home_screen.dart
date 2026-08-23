@@ -4,12 +4,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../core/location/location_provider.dart';
+import '../../core/location/location_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/router/app_router.dart';
+import '../../core/utils/formatters.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/widgets/glass_button.dart';
+import '../../shared/widgets/map_view.dart';
 import '../../shared/widgets/saved_place_card.dart';
 import '../../shared/widgets/service_shortcut.dart';
+import '../profile/data/profile_repository.dart';
+import '../wallet/data/wallet_repository.dart';
 import 'widgets/home_drawer.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -23,29 +31,84 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
 
+  /// يبقى `null` عندما تُعرض الخريطة البديلة (بلا مفتاح API).
+  GoogleMapController? _mapController;
+
+  @override
+  void initState() {
+    super.initState();
+    // نطلب الموقع بعد أول إطار — لا أثناء البناء.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(locationProvider.notifier).locate();
+    });
+  }
+
   @override
   void dispose() {
     _sheetController.dispose();
     super.dispose();
   }
 
+  /// يحدّد الموقع ويحرّك الكاميرا إليه، ويعرض سبب الفشل إن حدث.
+  Future<void> _goToMyLocation() async {
+    final notifier = ref.read(locationProvider.notifier);
+    await notifier.locate();
+    if (!mounted) return;
+
+    final state = ref.read(locationProvider);
+    state.when(
+      data: (loc) {
+        if (loc == null) return;
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(LatLng(loc.lat, loc.lng), 16),
+        );
+      },
+      loading: () {},
+      error: (_, __) {
+        final isDeniedForever =
+            notifier.lastStatus == LocationStatus.deniedForever;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_locationErrorMessage(context, notifier.lastStatus)),
+            action: isDeniedForever
+                ? SnackBarAction(
+                    label: L10n.of(context).settings,
+                    onPressed: LocationService.openSettings,
+                  )
+                : null,
+          ),
+        );
+      },
+    );
+  }
+
+  /// يترجم [LocationStatus] لرسالة قابلة للعرض — الحالة نفسها لا تحمل
+  /// نصاً لأنها تُنتج في طبقة لا تعرف لغة المستخدم.
+  static String _locationErrorMessage(BuildContext context, LocationStatus? status) {
+    final l10n = L10n.of(context);
+    return switch (status) {
+      LocationStatus.serviceDisabled => l10n.locationServiceDisabled,
+      LocationStatus.denied => l10n.locationDenied,
+      LocationStatus.deniedForever => l10n.locationDeniedForever,
+      _ => l10n.locationFailed,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = L10n.of(context);
 
     return Scaffold(
       drawer: const HomeDrawer(),
       body: Builder(
         builder: (context) => Stack(
           children: [
-            // ═══════════════ الخريطة (placeholder) ═══════════════
-            // TODO: استبدال بـ GoogleMap بعد إضافة مفتاح Google Maps API
-            // في web/index.html و android/ios، لأن الحزمة لا تدعم Windows desktop.
-            Container(
-              color: MishwarakColors.mapBgLight,
-              child: const Center(
-                child: Icon(Icons.map_outlined, size: 64, color: MishwarakColors.lightTextLight),
-              ),
+            // ═══════════════ الخريطة ═══════════════
+            // خريطة حقيقية عند توفّر المفتاح، وإلا بديل — راجع MapView.
+            MapView(
+              bottomPadding: 320,
+              onMapCreated: (c) => _mapController = c,
             ),
 
             // ═══════════════ الشريط العلوي ═══════════════
@@ -61,27 +124,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     const Spacer(),
                     // شارة المحفظة
-                    GlassPill(
-                      icon: Icons.account_balance_wallet_outlined,
-                      iconColor: MishwarakColors.primary,
-                      child: RichText(
-                        text: TextSpan(
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.onSurface,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          children: const [
-                            TextSpan(text: '15,300 '),
-                            TextSpan(
-                              text: 'ر.ي',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: MishwarakColors.lightTextMuted,
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final balance = ref.watch(walletBalanceProvider);
+                        return GestureDetector(
+                          onTap: () => context.push('${AppRoutes.home}/wallet'),
+                          child: GlassPill(
+                            icon: Icons.account_balance_wallet_outlined,
+                            iconColor: MishwarakColors.primary,
+                            child: RichText(
+                              text: TextSpan(
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: theme.colorScheme.onSurface,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: '${balance.when(
+                                      data: formatMoney,
+                                      loading: () => '—',
+                                      error: (_, __) => '—',
+                                    )} ',
+                                  ),
+                                  TextSpan(
+                                    text: l10n.currency,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: MishwarakColors.lightTextMuted,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -97,7 +174,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   GlassButton(
                     icon: Icons.my_location,
                     iconColor: MishwarakColors.primary,
-                    onTap: () {},
+                    onTap: _goToMyLocation,
                   ),
                   const SizedBox(height: 8),
                   GlassButton(
@@ -151,16 +228,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
 
                           // ═══ التحية ═══
-                          Text(
-                            'مرحباً، أحمد 👋',
-                            style: theme.textTheme.headlineLarge,
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final name = ref
+                                  .watch(userProfileProvider)
+                                  .valueOrNull
+                                  ?.fullName
+                                  .trim();
+                              return Text(
+                                (name != null && name.isNotEmpty)
+                                    ? l10n.greeting(name)
+                                    : l10n.welcome,
+                                style: theme.textTheme.headlineLarge,
+                              );
+                            },
                           ),
                           const SizedBox(height: 2),
-                          Text(
-                            'إلى أين تريد أن تذهب اليوم؟',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: MishwarakColors.lightTextMuted,
-                            ),
+                          // يعرض الموقع الحقيقي فور وصوله، وإلا نص افتراضي.
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final loc = ref.watch(locationProvider);
+                              return Row(
+                                children: [
+                                  Icon(
+                                    Icons.place_outlined,
+                                    size: 13,
+                                    color: loc.hasValue && loc.value != null
+                                        ? MishwarakColors.primary
+                                        : MishwarakColors.lightTextMuted,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      loc.when(
+                                        data: (l) => l?.label ?? l10n.whereTo,
+                                        loading: () => l10n.locating,
+                                        error: (_, __) => l10n.whereTo,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                        color: MishwarakColors.lightTextMuted,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                           const SizedBox(height: 14),
 
@@ -171,36 +285,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           const SizedBox(height: 14),
 
                           // ═══ الأماكن المحفوظة ═══
-                          Row(
-                            children: [
-                              Expanded(
-                                child: SavedPlaceCard(
-                                  icon: Icons.home_outlined,
-                                  label: 'المنزل',
-                                  subtitle: 'كريتر',
-                                  onTap: () {},
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: SavedPlaceCard(
-                                  icon: Icons.work_outline,
-                                  label: 'العمل',
-                                  subtitle: 'المعلا',
-                                  onTap: () {},
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: SavedPlaceCard(
-                                  icon: Icons.add,
-                                  label: 'إضافة',
-                                  subtitle: 'مكان جديد',
-                                  isAdd: true,
-                                  onTap: () {},
-                                ),
-                              ),
-                            ],
+                          // نعرض أول عنوانين فقط ليبقى زر "إضافة" ظاهراً.
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final places = ref
+                                      .watch(savedPlacesProvider)
+                                      .valueOrNull ??
+                                  const <SavedPlace>[];
+                              final shown = places.take(2).toList();
+                              return Row(
+                                children: [
+                                  for (final place in shown) ...[
+                                    Expanded(
+                                      child: SavedPlaceCard(
+                                        icon: switch (place.label) {
+                                          'home' => Icons.home_outlined,
+                                          'work' => Icons.work_outline,
+                                          _ => Icons.place_outlined,
+                                        },
+                                        label: place.name,
+                                        subtitle: place.address,
+                                        onTap: () => context
+                                            .push('${AppRoutes.home}/search'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                  ],
+                                  Expanded(
+                                    child: SavedPlaceCard(
+                                      icon: Icons.add,
+                                      label: l10n.add,
+                                      subtitle: l10n.newPlace,
+                                      isAdd: true,
+                                      onTap: () => context
+                                          .push('${AppRoutes.home}/profile'),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                           const SizedBox(height: 14),
 
@@ -210,25 +333,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             childAspectRatio: 1.05,
-                            children: const [
+                            children: [
                               ServiceShortcut(
                                 icon: Icons.directions_car,
-                                label: 'اقتصادي',
+                                label: l10n.serviceEconomy,
                                 color: MishwarakColors.secondary,
                               ),
                               ServiceShortcut(
                                 icon: Icons.workspace_premium,
-                                label: 'VIP',
+                                label: l10n.serviceVip,
                                 color: MishwarakColors.accent,
                               ),
                               ServiceShortcut(
                                 icon: Icons.female,
-                                label: 'نساء',
-                                color: Color(0xFFEC4899),
+                                label: l10n.serviceWomen,
+                                color: const Color(0xFFEC4899),
                               ),
                               ServiceShortcut(
                                 icon: Icons.schedule,
-                                label: 'حجز مسبق',
+                                label: l10n.schedule,
                                 color: MishwarakColors.success,
                               ),
                             ],
@@ -247,20 +370,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showSosDialog() {
+    final l10n = L10n.of(context);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('حالة طوارئ؟'),
-        content: const Text('سيتم إرسال موقعك للسلطات وجهات الطوارئ المحفوظة.'),
+        title: Text(l10n.emergencyTitle),
+        content: Text(l10n.emergencyBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
             onPressed: () {
               // TODO: تفعيل الطوارئ
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: MishwarakColors.danger),
-            child: const Text('طلب المساعدة'),
+            child: Text(l10n.emergencyAction),
           ),
         ],
       ),
@@ -275,6 +399,7 @@ class _SearchButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = L10n.of(context);
     return Material(
       color: theme.colorScheme.surface,
       borderRadius: BorderRadius.circular(14),
@@ -307,7 +432,7 @@ class _SearchButton extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   child: Text(
-                    'ابحث عن وجهتك...',
+                    l10n.searchHint,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: MishwarakColors.lightTextMuted,
                     ),
@@ -321,8 +446,8 @@ class _SearchButton extends StatelessWidget {
                   color: MishwarakColors.primary,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
-                  'احجز الآن',
+                child: Text(
+                  l10n.bookNow,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 11,

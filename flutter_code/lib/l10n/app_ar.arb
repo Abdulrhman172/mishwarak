@@ -1,0 +1,211 @@
+{
+  "@@locale": "ar",
+
+  "appName": "مِشوارَك",
+  "appTagline": "توصيل ركاب في اليمن",
+  "currency": "ر.ي",
+
+  "cancel": "إلغاء",
+  "confirm": "تأكيد",
+  "next": "التالي",
+  "skip": "تخطي",
+  "settings": "الإعدادات",
+  "add": "إضافة",
+  "notAddedYet": "لم يُضف بعد",
+  "loading": "جارٍ التحميل...",
+  "retryLater": "حاول مرة أخرى.",
+
+  "onboardTitle1": "اطلب مشوارك بضغطة زر",
+  "onboardBody1": "سائقون موثوقون في عدن حول الساعة، جاهزون لخدمتك",
+  "onboardTitle2": "أسعار شفافة قبل الرحلة",
+  "onboardBody2": "اعرف السعر قبل تأكيد الطلب. بدون مفاجآت.",
+  "onboardTitle3": "أمانك أولويتنا",
+  "onboardBody3": "شارك رحلتك مع عائلتك، وزر SOS للطوارئ، وخيار سائقة للنساء",
+  "onboardStart": "يلا نبدأ",
+
+  "welcome": "أهلاً بك 👋",
+  "loginPrompt": "أدخل رقم جوالك لإرسال رمز التحقق",
+  "sendOtp": "إرسال رمز التحقق",
+  "termsNotice": "بمتابعتك أنت توافق على شروط الاستخدام وسياسة الخصوصية",
+  "sendOtpFailed": "تعذّر إرسال رمز التحقق. حاول مرة أخرى.",
+
+  "otpTitle": "رمز التحقق",
+  "otpEnter": "أدخل الرمز",
+  "otpSentTo": "تم إرسال رمز مكوّن من 6 أرقام إلى ",
+  "otpInvalid": "رمز التحقق غير صحيح. حاول مرة أخرى.",
+  "otpResend": "إعادة إرسال الرمز",
+  "otpResendFailed": "تعذّر إعادة إرسال الرمز.",
+  "otpResendIn": "إعادة الإرسال بعد {seconds} ثانية",
+  "@otpResendIn": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+
+  "greeting": "مرحباً، {name} 👋",
+  "@greeting": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "whereTo": "إلى أين تريد أن تذهب اليوم؟",
+  "locating": "جارٍ تحديد موقعك...",
+  "searchHint": "ابحث عن وجهتك...",
+  "bookNow": "احجز الآن",
+  "newPlace": "مكان جديد",
+  "myLocation": "موقعي",
+  "emergencyTitle": "حالة طوارئ؟",
+  "emergencyBody": "سيتم إرسال موقعك للسلطات وجهات الطوارئ المحفوظة.",
+  "emergencyAction": "طلب المساعدة",
+
+  "chooseDestination": "اختر وجهتك",
+  "destinationHint": "إلى أين؟",
+  "useAsDestination": "استخدام هذا النص كوجهة",
+  "savedPlaces": "العناوين المحفوظة",
+  "noSavedPlaces": "لا توجد عناوين محفوظة بعد",
+  "savedPlacesFailed": "تعذّر جلب العناوين",
+  "recentDestinations": "الوجهات الأخيرة",
+  "noRecentTrips": "لا توجد رحلات سابقة",
+  "historyFailed": "تعذّر جلب السجل",
+
+  "chooseVehicle": "اختر مركبتك",
+  "loadingOptions": "جارٍ تحميل الخيارات...",
+  "optionsCount": "{count} خيارات متاحة",
+  "@optionsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "optionsWithDistance": "{count} خيارات · {km} كم",
+  "@optionsWithDistance": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "km": { "type": "String" }
+    }
+  },
+  "wallet": "محفظة",
+  "cash": "نقدي",
+  "coupon": "كوبون",
+  "schedule": "حجز مسبق",
+  "serviceEconomy": "اقتصادي",
+  "serviceVip": "VIP",
+  "serviceWomen": "نساء",
+  "orderVehicle": "اطلب {name}",
+  "@orderVehicle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "requestFailed": "تعذّر إنشاء الطلب. حاول مرة أخرى.",
+
+  "findingDriver": "نبحث لك عن أفضل سائق...",
+  "findingDriverBody": "لحظات وسنجد لك أقرب سائق متاح",
+  "noDriverTitle": "لا يوجد سائق متاح الآن",
+  "noDriverBody": "جرّب نوع مركبة آخر أو أعد المحاولة بعد قليل",
+  "cancelRequest": "إلغاء الطلب",
+  "cancelledByRider": "ألغاها الراكب",
+
+  "statusAssigned": "تم تعيين سائق لك",
+  "statusArriving": "السائق في الطريق إليك",
+  "statusArrived": "السائق وصل — بانتظارك",
+  "statusOnTrip": "في الطريق إلى وجهتك",
+  "statusCompleted": "انتهت الرحلة",
+  "statusCancelled": "أُلغيت الرحلة",
+  "statusRequested": "جارٍ تعيين سائق...",
+  "loadingDriver": "جارٍ جلب بيانات السائق...",
+  "tripShared": "تمت مشاركة رحلتك",
+  "emergencyNotified": "تم إبلاغ جهات الطوارئ",
+  "chatComingSoon": "المحادثة قيد الإنشاء",
+  "callingDriver": "جارِ الاتصال بـ {name}",
+  "@callingDriver": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "fare": "السعر",
+  "driverTripsCount": "· {count} رحلة",
+  "@driverTripsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "tripDone": "وصلت بسلامة!",
+  "tripDoneBody": "نتمنى لك يوماً سعيداً 🌟",
+  "tripFare": "أجرة الرحلة",
+  "tip": "إكرامية",
+  "total": "الإجمالي",
+  "driver": "السائق",
+  "rateQuestion": "كيف كانت رحلتك مع {name}؟",
+  "@rateQuestion": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "whatYouLiked": "ما الذي أعجبك؟",
+  "whatWentWrong": "ما الذي أزعجك؟",
+  "addTip": "أضف إكرامية للسائق",
+  "noTip": "لا شكراً",
+  "submitRating": "إرسال التقييم",
+  "ratingSent": "شكراً لك! تم إرسال تقييمك ({stars} نجوم)",
+  "@ratingSent": {
+    "placeholders": { "stars": { "type": "int" } }
+  },
+  "ratingFailed": "تعذّر إرسال التقييم. حاول مرة أخرى.",
+  "ratingSentTipSuffix": " مع إكرامية {amount} {currency}",
+  "@ratingSentTipSuffix": {
+    "placeholders": {
+      "amount": { "type": "String" },
+      "currency": { "type": "String" }
+    }
+  },
+  "tagSafeDriving": "قيادة آمنة",
+  "tagCleanCar": "سيارة نظيفة",
+  "tagFriendly": "كلام لطيف",
+  "tagOnTime": "في الموعد",
+  "tagFastRoute": "طريق سريع",
+  "tagGoodMusic": "موسيقى جيدة",
+  "tagReckless": "قيادة متهورة",
+  "tagDirtyCar": "سيارة متسخة",
+  "tagRude": "غير مهذب",
+  "tagVeryLate": "تأخر كثيراً",
+
+  "walletTitle": "المحفظة",
+  "history": "السجل",
+  "currentBalance": "الرصيد الحالي",
+  "topUp": "شحن الرصيد",
+  "topUpComingSoon": "شحن الرصيد قيد الإنشاء",
+  "transfer": "تحويل",
+  "transferComingSoon": "التحويل قيد الإنشاء",
+  "paymentMethods": "طرق الدفع",
+  "recentTransactions": "آخر المعاملات",
+  "transactionsFailed": "تعذّر جلب المعاملات",
+  "noTransactions": "لا توجد معاملات بعد",
+  "addCard": "إضافة بطاقة",
+  "defaultLabel": "الافتراضي",
+
+  "myTrips": "رحلاتي",
+  "tripsFailed": "تعذّر جلب سجل الرحلات",
+  "tripsCount": "رحلات",
+  "totalSpent": "إجمالي الإنفاق",
+  "avgRating": "متوسط التقييم",
+  "noTripsYet": "لم تقم بأي رحلة بعد",
+  "cancelledTrip": "ملغاة",
+
+  "profile": "الملف الشخصي",
+  "defaultUserName": "مستخدم مِشوارَك",
+  "yourPoints": "نقاطك المتاحة",
+  "points": "نقطة",
+  "goldReached": "وصلت للمستوى الذهبي 🎉",
+  "pointsToGold": "{count} نقطة لمستوى ذهبي",
+  "@pointsToGold": {
+    "placeholders": { "count": { "type": "String" } }
+  },
+  "memberSince": "· عضو منذ {year}",
+  "@memberSince": {
+    "placeholders": { "year": { "type": "int" } }
+  },
+  "personalInfo": "المعلومات الشخصية",
+  "name": "الاسم",
+  "phone": "الجوال",
+  "email": "البريد",
+  "addAddress": "إضافة عنوان",
+  "emergencyContacts": "جهات الطوارئ",
+  "addContact": "إضافة جهة اتصال",
+
+  "notifications": "الإشعارات",
+  "markAllRead": "تحديد الكل مقروء",
+  "notificationsFailed": "تعذّر جلب الإشعارات",
+  "noNotifications": "لا توجد إشعارات",
+
+  "locationServiceDisabled": "خدمة الموقع مغلقة. فعّلها من إعدادات الجهاز.",
+  "locationDenied": "نحتاج إذن الموقع لتحديد نقطة انطلاقك.",
+  "locationDeniedForever": "إذن الموقع مرفوض نهائياً. افتح الإعدادات واسمح بالوصول.",
+  "locationFailed": "تعذّر تحديد موقعك. حاول مرة أخرى."
+}

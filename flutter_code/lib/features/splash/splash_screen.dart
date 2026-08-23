@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -44,6 +45,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final fade = CurvedAnimation(parent: _c, curve: Curves.easeOut);
+    final l10n = L10n.of(context);
 
     return Scaffold(
       backgroundColor: MishwarakColors.primary,
@@ -69,9 +71,9 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'مِشوارَك',
-                  style: TextStyle(
+                Text(
+                  l10n.appName,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 34,
                     fontWeight: FontWeight.w900,
@@ -80,7 +82,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'توصيل ركاب في اليمن',
+                  l10n.appTagline,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.85),
                     fontSize: 14,

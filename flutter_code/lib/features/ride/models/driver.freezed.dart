@@ -31,8 +31,12 @@ mixin _$Driver {
   String? get photoUrl => throw _privateConstructorUsedError;
   bool get isFemale => throw _privateConstructorUsedError;
 
+  /// Serializes this Driver to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of Driver
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $DriverCopyWith<Driver> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -64,6 +68,8 @@ class _$DriverCopyWithImpl<$Res, $Val extends Driver>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of Driver
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -151,6 +157,8 @@ class __$$DriverImplCopyWithImpl<$Res>
       _$DriverImpl _value, $Res Function(_$DriverImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of Driver
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -278,12 +286,14 @@ class _$DriverImpl implements _Driver {
                 other.isFemale == isFemale));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, name, phone, rating,
       completedTrips, carModel, carColor, plateNumber, photoUrl, isFemale);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Driver
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$DriverImplCopyWith<_$DriverImpl> get copyWith =>
@@ -332,8 +342,11 @@ abstract class _Driver implements Driver {
   String? get photoUrl;
   @override
   bool get isFemale;
+
+  /// Create a copy of Driver
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$DriverImplCopyWith<_$DriverImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -362,8 +375,12 @@ mixin _$Ride {
   int? get tip => throw _privateConstructorUsedError;
   int? get rating => throw _privateConstructorUsedError;
 
+  /// Serializes this Ride to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of Ride
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $RideCopyWith<Ride> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -404,6 +421,8 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of Ride
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -497,6 +516,8 @@ class _$RideCopyWithImpl<$Res, $Val extends Ride>
     ) as $Val);
   }
 
+  /// Create a copy of Ride
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $DriverCopyWith<$Res> get driver {
@@ -543,6 +564,8 @@ class __$$RideImplCopyWithImpl<$Res>
   __$$RideImplCopyWithImpl(_$RideImpl _value, $Res Function(_$RideImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of Ride
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -735,7 +758,7 @@ class _$RideImpl implements _Ride {
             (identical(other.rating, rating) || other.rating == rating));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -757,7 +780,9 @@ class _$RideImpl implements _Ride {
       tip,
       rating);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Ride
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$RideImplCopyWith<_$RideImpl> get copyWith =>
@@ -827,8 +852,11 @@ abstract class _Ride implements Ride {
   int? get tip;
   @override
   int? get rating;
+
+  /// Create a copy of Ride
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$RideImplCopyWith<_$RideImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

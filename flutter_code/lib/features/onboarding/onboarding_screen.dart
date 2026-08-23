@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 
 class _Slide {
   final String title;
@@ -32,28 +33,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = PageController();
   int _step = 0;
 
-  static const _slides = [
-    _Slide(
-      title: 'اطلب مشوارك بضغطة زر',
-      subtitle: 'سائقون موثوقون في عدن حول الساعة، جاهزون لخدمتك',
-      icon: Icons.directions_car_filled_rounded,
-      color: MishwarakColors.primary,
-    ),
-    _Slide(
-      title: 'أسعار شفافة قبل الرحلة',
-      subtitle: 'اعرف السعر قبل تأكيد الطلب. بدون مفاجآت.',
-      icon: Icons.receipt_long_rounded,
-      color: MishwarakColors.secondary,
-    ),
-    _Slide(
-      title: 'أمانك أولويتنا',
-      subtitle: 'شارك رحلتك مع عائلتك، وزر SOS للطوارئ، وخيار سائقة للنساء',
-      icon: Icons.verified_user_rounded,
-      color: MishwarakColors.accent,
-    ),
-  ];
+  /// نصوص الشرائح مترجَمة — لا تصح كقائمة ثابتة لأنها تحتاج context.
+  List<_Slide> _slides(L10n l10n) => [
+        _Slide(
+          title: l10n.onboardTitle1,
+          subtitle: l10n.onboardBody1,
+          icon: Icons.directions_car_filled_rounded,
+          color: MishwarakColors.primary,
+        ),
+        _Slide(
+          title: l10n.onboardTitle2,
+          subtitle: l10n.onboardBody2,
+          icon: Icons.receipt_long_rounded,
+          color: MishwarakColors.secondary,
+        ),
+        _Slide(
+          title: l10n.onboardTitle3,
+          subtitle: l10n.onboardBody3,
+          icon: Icons.verified_user_rounded,
+          color: MishwarakColors.accent,
+        ),
+      ];
 
-  bool get _isLast => _step == _slides.length - 1;
+  bool _isLast(int slideCount) => _step == slideCount - 1;
 
   @override
   void dispose() {
@@ -61,8 +63,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _next() {
-    if (_isLast) {
+  void _next(int slideCount) {
+    if (_isLast(slideCount)) {
       context.go(AppRoutes.login);
     } else {
       _controller.nextPage(
@@ -75,6 +77,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = L10n.of(context);
+    final slides = _slides(l10n);
 
     return Scaffold(
       body: SafeArea(
@@ -90,7 +94,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   style: TextButton.styleFrom(
                     foregroundColor: MishwarakColors.lightTextMuted,
                   ),
-                  child: const Text('تخطي'),
+                  child: Text(l10n.skip),
                 ),
               ),
             ),
@@ -99,10 +103,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _controller,
-                itemCount: _slides.length,
+                itemCount: slides.length,
                 onPageChanged: (i) => setState(() => _step = i),
                 itemBuilder: (context, i) {
-                  final slide = _slides[i];
+                  final slide = slides[i];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Column(
@@ -143,7 +147,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                for (var i = 0; i < _slides.length; i++)
+                for (var i = 0; i < slides.length; i++)
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     width: _step == i ? 24 : 8,
@@ -164,12 +168,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
               child: ElevatedButton(
-                onPressed: _next,
+                onPressed: () => _next(slides.length),
                 style: ElevatedButton.styleFrom(
                   elevation: 8,
                   shadowColor: MishwarakColors.primary.withOpacity(0.4),
                 ),
-                child: Text(_isLast ? 'يلا نبدأ' : 'التالي'),
+                child: Text(_isLast(slides.length) ? l10n.onboardStart : l10n.next),
               ),
             ),
           ],

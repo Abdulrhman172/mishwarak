@@ -25,7 +25,9 @@ class VehicleType with _$VehicleType {
     required String descriptionEn,
     required int seats,
     required int etaMinutes,
-    required int price, // بالريال اليمني
+    required int price, // السعر الأساسي بالريال اليمني
+    /// يُضرب في المسافة ويُضاف للسعر الأساسي — راجع [FareCalculator].
+    @Default(0) int pricePerKm,
     int? oldPrice,
     String? badgeAr,
     String? badgeEn,
@@ -49,6 +51,7 @@ class VehicleTypesRepository {
       seats: 4,
       etaMinutes: 3,
       price: 2500,
+      pricePerKm: 120,
       oldPrice: 3200,
     ),
     const VehicleType(
@@ -61,6 +64,7 @@ class VehicleTypesRepository {
       seats: 4,
       etaMinutes: 5,
       price: 3800,
+      pricePerKm: 180,
     ),
     const VehicleType(
       id: 'xl',
@@ -72,6 +76,7 @@ class VehicleTypesRepository {
       seats: 6,
       etaMinutes: 7,
       price: 5200,
+      pricePerKm: 240,
     ),
     const VehicleType(
       id: 'women',
@@ -83,6 +88,7 @@ class VehicleTypesRepository {
       seats: 4,
       etaMinutes: 9,
       price: 3200,
+      pricePerKm: 160,
       badgeAr: 'حصري',
       badgeEn: 'Exclusive',
     ),

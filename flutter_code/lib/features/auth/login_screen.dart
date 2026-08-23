@@ -3,20 +3,25 @@
 // ═══════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/app_localizations.dart';
+import 'data/auth_repository.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _phone = TextEditingController();
+  bool _isSending = false;
+  String? _error;
 
   /// أرقام اليمن المحلية 9 خانات (مثل 771234567).
   bool get _isValid => _phone.text.trim().length >= 9;
@@ -33,13 +38,28 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    context.push('${AppRoutes.otp}?phone=${_phone.text.trim()}');
+  Future<void> _submit() async {
+    final phone = '+967${_phone.text.trim()}';
+    setState(() {
+      _isSending = true;
+      _error = null;
+    });
+    try {
+      await ref.read(authRepositoryProvider).sendOtp(phone);
+      if (!mounted) return;
+      context.push('${AppRoutes.otp}?phone=${_phone.text.trim()}');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = L10n.of(context).sendOtpFailed);
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = L10n.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -63,10 +83,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              Text('أهلاً بك 👋', style: theme.textTheme.displaySmall),
+              Text(l10n.welcome, style: theme.textTheme.displaySmall),
               const SizedBox(height: 8),
               Text(
-                'أدخل رقم جوالك لإرسال رمز التحقق',
+                l10n.loginPrompt,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: MishwarakColors.lightTextMuted,
                 ),
@@ -100,19 +120,37 @@ class _LoginScreenState extends State<LoginScreen> {
                   prefixIconConstraints: const BoxConstraints(minWidth: 0),
                 ),
               ),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _error!,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
 
               ElevatedButton(
-                onPressed: _isValid ? _submit : null,
+                onPressed: _isValid && !_isSending ? _submit : null,
                 style: ElevatedButton.styleFrom(
                   disabledBackgroundColor: theme.dividerColor,
                 ),
-                child: const Text('إرسال رمز التحقق'),
+                child: _isSending
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(l10n.sendOtp),
               ),
 
               const Spacer(),
               Text(
-                'بمتابعتك أنت توافق على شروط الاستخدام وسياسة الخصوصية',
+                l10n.termsNotice,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: MishwarakColors.lightTextLight,
                 ),

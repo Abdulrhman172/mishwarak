@@ -1,0 +1,211 @@
+{
+  "@@locale": "en",
+
+  "appName": "Mishwarak",
+  "appTagline": "Ride-hailing in Yemen",
+  "currency": "YER",
+
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "next": "Next",
+  "skip": "Skip",
+  "settings": "Settings",
+  "add": "Add",
+  "notAddedYet": "Not set yet",
+  "loading": "Loading...",
+  "retryLater": "Please try again.",
+
+  "onboardTitle1": "A ride at the tap of a button",
+  "onboardBody1": "Trusted drivers across Aden, around the clock",
+  "onboardTitle2": "Clear pricing up front",
+  "onboardBody2": "See the fare before you confirm. No surprises.",
+  "onboardTitle3": "Your safety comes first",
+  "onboardBody3": "Share your trip, an SOS button, and women-only drivers",
+  "onboardStart": "Let's go",
+
+  "welcome": "Welcome 👋",
+  "loginPrompt": "Enter your phone number to receive a code",
+  "sendOtp": "Send code",
+  "termsNotice": "By continuing you agree to the Terms and Privacy Policy",
+  "sendOtpFailed": "Couldn't send the code. Please try again.",
+
+  "otpTitle": "Verification code",
+  "otpEnter": "Enter the code",
+  "otpSentTo": "We sent a 6-digit code to ",
+  "otpInvalid": "That code isn't right. Please try again.",
+  "otpResend": "Resend code",
+  "otpResendFailed": "Couldn't resend the code.",
+  "otpResendIn": "Resend in {seconds}s",
+  "@otpResendIn": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+
+  "greeting": "Hi {name} 👋",
+  "@greeting": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "whereTo": "Where would you like to go?",
+  "locating": "Finding your location...",
+  "searchHint": "Search for your destination...",
+  "bookNow": "Book now",
+  "newPlace": "New place",
+  "myLocation": "My location",
+  "emergencyTitle": "Emergency?",
+  "emergencyBody": "Your location will be sent to the authorities and your saved contacts.",
+  "emergencyAction": "Get help",
+
+  "chooseDestination": "Choose your destination",
+  "destinationHint": "Where to?",
+  "useAsDestination": "Use this text as destination",
+  "savedPlaces": "Saved places",
+  "noSavedPlaces": "No saved places yet",
+  "savedPlacesFailed": "Couldn't load saved places",
+  "recentDestinations": "Recent destinations",
+  "noRecentTrips": "No previous trips",
+  "historyFailed": "Couldn't load history",
+
+  "chooseVehicle": "Choose your ride",
+  "loadingOptions": "Loading options...",
+  "optionsCount": "{count} options available",
+  "@optionsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "optionsWithDistance": "{count} options · {km} km",
+  "@optionsWithDistance": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "km": { "type": "String" }
+    }
+  },
+  "wallet": "Wallet",
+  "cash": "Cash",
+  "coupon": "Coupon",
+  "schedule": "Schedule",
+  "serviceEconomy": "Economy",
+  "serviceVip": "VIP",
+  "serviceWomen": "Women",
+  "orderVehicle": "Book {name}",
+  "@orderVehicle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "requestFailed": "Couldn't create the request. Please try again.",
+
+  "findingDriver": "Finding your best driver...",
+  "findingDriverBody": "Matching you with the nearest available driver",
+  "noDriverTitle": "No driver available right now",
+  "noDriverBody": "Try another vehicle type or check back shortly",
+  "cancelRequest": "Cancel request",
+  "cancelledByRider": "Cancelled by rider",
+
+  "statusAssigned": "A driver has been assigned",
+  "statusArriving": "Your driver is on the way",
+  "statusArrived": "Your driver has arrived",
+  "statusOnTrip": "On the way to your destination",
+  "statusCompleted": "Trip completed",
+  "statusCancelled": "Trip cancelled",
+  "statusRequested": "Assigning a driver...",
+  "loadingDriver": "Loading driver details...",
+  "tripShared": "Your trip has been shared",
+  "emergencyNotified": "Emergency contacts notified",
+  "chatComingSoon": "Chat is coming soon",
+  "callingDriver": "Calling {name}",
+  "@callingDriver": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "fare": "Fare",
+  "driverTripsCount": "· {count} trips",
+  "@driverTripsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "tripDone": "You've arrived safely!",
+  "tripDoneBody": "Have a wonderful day 🌟",
+  "tripFare": "Trip fare",
+  "tip": "Tip",
+  "total": "Total",
+  "driver": "Driver",
+  "rateQuestion": "How was your ride with {name}?",
+  "@rateQuestion": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "whatYouLiked": "What did you like?",
+  "whatWentWrong": "What went wrong?",
+  "addTip": "Add a tip for your driver",
+  "noTip": "No thanks",
+  "submitRating": "Submit rating",
+  "ratingSent": "Thank you! Your {stars}-star rating was sent",
+  "@ratingSent": {
+    "placeholders": { "stars": { "type": "int" } }
+  },
+  "ratingFailed": "Couldn't submit your rating. Please try again.",
+  "ratingSentTipSuffix": " with a {amount} {currency} tip",
+  "@ratingSentTipSuffix": {
+    "placeholders": {
+      "amount": { "type": "String" },
+      "currency": { "type": "String" }
+    }
+  },
+  "tagSafeDriving": "Safe driving",
+  "tagCleanCar": "Clean car",
+  "tagFriendly": "Friendly",
+  "tagOnTime": "On time",
+  "tagFastRoute": "Fast route",
+  "tagGoodMusic": "Good music",
+  "tagReckless": "Reckless",
+  "tagDirtyCar": "Dirty car",
+  "tagRude": "Rude",
+  "tagVeryLate": "Very late",
+
+  "walletTitle": "Wallet",
+  "history": "History",
+  "currentBalance": "Current balance",
+  "topUp": "Top up",
+  "topUpComingSoon": "Top-up is coming soon",
+  "transfer": "Transfer",
+  "transferComingSoon": "Transfers are coming soon",
+  "paymentMethods": "Payment methods",
+  "recentTransactions": "Recent transactions",
+  "transactionsFailed": "Couldn't load transactions",
+  "noTransactions": "No transactions yet",
+  "addCard": "Add card",
+  "defaultLabel": "Default",
+
+  "myTrips": "My trips",
+  "tripsFailed": "Couldn't load your trip history",
+  "tripsCount": "Trips",
+  "totalSpent": "Total spent",
+  "avgRating": "Avg. rating",
+  "noTripsYet": "You haven't taken a trip yet",
+  "cancelledTrip": "Cancelled",
+
+  "profile": "Profile",
+  "defaultUserName": "Mishwarak user",
+  "yourPoints": "Your points",
+  "points": "points",
+  "goldReached": "You've reached Gold 🎉",
+  "pointsToGold": "{count} points to Gold",
+  "@pointsToGold": {
+    "placeholders": { "count": { "type": "String" } }
+  },
+  "memberSince": "· Member since {year}",
+  "@memberSince": {
+    "placeholders": { "year": { "type": "int" } }
+  },
+  "personalInfo": "Personal information",
+  "name": "Name",
+  "phone": "Phone",
+  "email": "Email",
+  "addAddress": "Add address",
+  "emergencyContacts": "Emergency contacts",
+  "addContact": "Add contact",
+
+  "notifications": "Notifications",
+  "markAllRead": "Mark all read",
+  "notificationsFailed": "Couldn't load notifications",
+  "noNotifications": "No notifications",
+
+  "locationServiceDisabled": "Location services are off. Enable them in device settings.",
+  "locationDenied": "We need location access to set your pickup point.",
+  "locationDeniedForever": "Location access is permanently denied. Open settings to allow it.",
+  "locationFailed": "Couldn't determine your location. Please try again."
+}

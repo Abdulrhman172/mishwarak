@@ -20,12 +20,17 @@ dependencies:
   # ═══════ Navigation ═══════
   go_router: ^14.2.0              # التنقل بين الشاشات
 
+  # ═══════ Backend (Supabase) ═══════
+  supabase_flutter: ^2.5.6        # قاعدة البيانات + المصادقة + Realtime
+
   # ═══════ Networking ═══════
   dio: ^5.4.3+1                   # HTTP client قوي
   # retrofit: ^4.1.0              # معطّلة مؤقتاً - retrofit_generator غير متوافق مع Dart SDK الحالي
 
   # ═══════ Maps & Location ═══════
-  # google_maps_flutter: ^2.7.0   # معطّلة مؤقتاً - تحتاج مفتاح API، وغير مدعومة على Windows desktop
+  # ملاحظة: غير مدعومة على Windows desktop — استخدم Chrome أو Android/iOS.
+  # بدون مفتاح API يعرض التطبيق خريطة بديلة تلقائياً (راجع MapView).
+  google_maps_flutter: ^2.7.0     # خرائط Google
   geolocator: ^12.0.0             # الحصول على الموقع
   geocoding: ^3.0.0               # تحويل العناوين
   flutter_polyline_points: ^2.1.0 # رسم المسارات
@@ -65,8 +70,30 @@ dev_dependencies:
   # retrofit_generator: ^8.1.2    # معطّلة - انظر ملاحظة retrofit أعلاه
   json_serializable: ^6.8.0
   freezed: ^2.5.2                 # data classes
+  image: ^4.8.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
-  # NOTE: custom fonts and generated l10n disabled until
-  # assets/fonts and lib/l10n are actually added to the repo.
+  generate: true                  # يولّد L10n من lib/l10n/*.arb
+  # NOTE: الخطوط المخصّصة معطّلة حتى تُضاف ملفات
+  # assets/fonts/IBMPlexSansArabic-*.ttf — الثيم يستخدم GoogleFonts بديلاً.
+
+# ═══════ أيقونة التطبيق ═══════
+# التوليد: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/icon/icon.png"
+  android: true
+  ios: true
+  # الأيقونة معتمة بالكامل، لكن PNG (RGBA) يحمل قناة ألفا دائماً؛
+  # نزيلها هنا لأن Apple يرفض التطبيق إن وُجدت.
+  remove_alpha_ios: true
+  web:
+    generate: true
+    background_color: "#00A651"
+    theme_color: "#00A651"
+  windows:
+    generate: true
+  # الأيقونة التكيّفية على أندرويد: نفس الرسم فوق خلفية بلون التطبيق
+  adaptive_icon_background: "#008A44"
+  adaptive_icon_foreground: "assets/icon/icon.png"

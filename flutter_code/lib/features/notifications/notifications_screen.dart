@@ -2,129 +2,119 @@
 // notifications_screen.dart - قائمة الإشعارات
 // ═══════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/formatters.dart';
+import '../../l10n/app_localizations.dart';
+import 'data/notification_repository.dart';
 
-class _Notif {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String subtitle;
-  final String time;
-  final bool unread;
-
-  const _Notif({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.subtitle,
-    required this.time,
-    this.unread = false,
-  });
-}
-
-class NotificationsScreen extends StatefulWidget {
+class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
 
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = L10n.of(context);
+    final notifications = ref.watch(notificationsProvider);
+    final repo = ref.read(notificationRepositoryProvider);
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
-  static const _initial = [
-    _Notif(
-      icon: Icons.card_giftcard,
-      color: MishwarakColors.accent,
-      title: '🎉 حصلت على 200 نقطة',
-      subtitle: 'لإكمالك رحلة اليوم',
-      time: 'الآن',
-      unread: true,
-    ),
-    _Notif(
-      icon: Icons.local_offer_outlined,
-      color: MishwarakColors.primary,
-      title: 'كوبون خصم 30%',
-      subtitle: 'عرض خاص لهذا الأسبوع فقط',
-      time: 'منذ ساعتين',
-      unread: true,
-    ),
-    _Notif(
-      icon: Icons.check_circle_outline,
-      color: MishwarakColors.success,
-      title: 'اكتملت رحلتك',
-      subtitle: 'إلى جامعة عدن · 3,800 ر.ي',
-      time: 'منذ 3 ساعات',
-      unread: true,
-    ),
-    _Notif(
-      icon: Icons.workspace_premium,
-      color: MishwarakColors.accent,
-      title: 'ترقية VIP بخصم 50%',
-      subtitle: 'استمتع بمزايا حصرية',
-      time: 'أمس',
-    ),
-    _Notif(
-      icon: Icons.star_rounded,
-      color: MishwarakColors.primary,
-      title: 'محمد قيمك بـ 5 نجوم',
-      subtitle: 'راكب رائع، شكراً!',
-      time: 'أمس',
-    ),
-  ];
-
-  /// فهارس الإشعارات التي قُرئت في هذه الجلسة.
-  final Set<int> _read = {};
-
-  bool _isUnread(int i) => _initial[i].unread && !_read.contains(i);
-
-  @override
-  Widget build(BuildContext context) {
-    final hasUnread = List.generate(_initial.length, (i) => i).any(_isUnread);
+    final hasUnread = notifications.maybeWhen(
+      data: (list) => list.any((n) => !n.isRead),
+      orElse: () => false,
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الإشعارات'),
+        title: Text(l10n.notifications),
         centerTitle: false,
         actions: [
           TextButton(
             onPressed: hasUnread
-                ? () => setState(
-                      () => _read.addAll(
-                        List.generate(_initial.length, (i) => i),
-                      ),
-                    )
+                ? () async {
+                    await repo.markAllRead();
+                    ref.invalidate(notificationsProvider);
+                  }
                 : null,
-            child: const Text('تحديد الكل مقروء'),
+            child: Text(l10n.markAllRead),
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-        itemCount: _initial.length,
-        itemBuilder: (context, i) => _NotifTile(
-          notif: _initial[i],
-          unread: _isUnread(i),
-          onTap: () => setState(() => _read.add(i)),
-        ),
+      body: notifications.when(
+        data: (list) {
+          if (list.isEmpty) return const _EmptyNotifications();
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+            itemCount: list.length,
+            itemBuilder: (context, i) => _NotifTile(
+              notif: list[i],
+              onTap: () async {
+                if (list[i].isRead) return;
+                await repo.markRead(list[i].id);
+                ref.invalidate(notificationsProvider);
+              },
+            ),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, __) => _EmptyNotifications(message: l10n.notificationsFailed),
+      ),
+    );
+  }
+}
+
+// ─────────────── لا توجد إشعارات ───────────────
+class _EmptyNotifications extends StatelessWidget {
+  /// النص الافتراضي (لا إشعارات) يُبنى في build لأنه يحتاج context
+  /// للترجمة — لا يصح كقيمة ثابتة في المعامل.
+  final String? message;
+
+  const _EmptyNotifications({this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.notifications_none_rounded,
+            size: 44,
+            color: MishwarakColors.lightTextMuted,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message ?? L10n.of(context).noNotifications,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: MishwarakColors.lightTextMuted,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _NotifTile extends StatelessWidget {
-  final _Notif notif;
-  final bool unread;
+  final AppNotification notif;
   final VoidCallback onTap;
 
-  const _NotifTile({
-    required this.notif,
-    required this.unread,
-    required this.onTap,
-  });
+  const _NotifTile({required this.notif, required this.onTap});
+
+  /// أيقونة ولون حسب نوع الإشعار المخزّن في العمود `type`.
+  (IconData, Color) get _visual => switch (notif.type) {
+        'promo' => (Icons.local_offer_outlined, MishwarakColors.primary),
+        'ride' => (Icons.check_circle_outline, MishwarakColors.success),
+        'points' => (Icons.card_giftcard, MishwarakColors.accent),
+        'rating' => (Icons.star_rounded, MishwarakColors.accent),
+        _ => (Icons.notifications_none_rounded, MishwarakColors.primary),
+      };
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final unread = !notif.isRead;
+    final (icon, color) = _visual;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -161,9 +151,9 @@ class _NotifTile extends StatelessWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: notif.color.withOpacity(0.15),
+                    color: color.withOpacity(0.15),
                   ),
-                  child: Icon(notif.icon, color: notif.color, size: 22),
+                  child: Icon(icon, color: color, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -177,17 +167,19 @@ class _NotifTile extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        notif.subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 12,
-                          color: MishwarakColors.lightTextMuted,
+                      if (notif.subtitle != null) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          notif.subtitle!,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 12,
+                            color: MishwarakColors.lightTextMuted,
+                          ),
                         ),
-                      ),
+                      ],
                       const SizedBox(height: 5),
                       Text(
-                        notif.time,
+                        formatRelative(notif.createdAt),
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: 10,
                           color: MishwarakColors.lightTextLight,

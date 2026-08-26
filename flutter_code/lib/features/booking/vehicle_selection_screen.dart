@@ -15,7 +15,9 @@ import 'data/fare_calculator.dart';
 import '../../shared/widgets/map_view.dart';
 import '../../shared/widgets/route_dots.dart';
 import '../ride/data/ride_repository.dart';
+import 'data/promo_repository.dart';
 import 'data/vehicle_type_repository.dart';
+import 'widgets/promo_sheet.dart';
 import 'models/vehicle_type.dart';
 
 class VehicleSelectionScreen extends ConsumerStatefulWidget {
@@ -24,12 +26,16 @@ class VehicleSelectionScreen extends ConsumerStatefulWidget {
   final double destLat;
   final double destLng;
 
+  /// فئة تُختار تلقائياً عند الوصول من اختصارات الشاشة الرئيسية.
+  final String? preferredCategory;
+
   const VehicleSelectionScreen({
     super.key,
     required this.destName,
     required this.destAddress,
     required this.destLat,
     required this.destLng,
+    this.preferredCategory,
   });
 
   @override
@@ -39,9 +45,19 @@ class VehicleSelectionScreen extends ConsumerStatefulWidget {
 
 class _VehicleSelectionScreenState
     extends ConsumerState<VehicleSelectionScreen> {
-  int _selectedIndex = 1; // "مريح" افتراضياً (كما في التصميم)
+  /// `null` حتى يختار المستخدم أو تصل القائمة، فنعرف الفرق بين
+  /// "لم يُختر بعد" و"اختير الأول".
+  int? _selectedIndex;
+
   String _paymentMethod = 'wallet';
   bool _isRequesting = false;
+
+  /// الكوبون المُتحقَّق منه وقيمة خصمه.
+  ///
+  /// التحقّق يتم في القاعدة (`preview_promo`) والتسجيل بعد إنشاء
+  /// الرحلة (`redeem_promo`)، فلا يُحتسب كوبون على رحلة لم تُطلب.
+  String? _promoCode;
+  int _discount = 0;
 
   /// المسافة بين موقع الراكب والوجهة — أساس حساب الأجرة.
   ///
@@ -59,9 +75,45 @@ class _VehicleSelectionScreenState
     );
   }
 
+  /// الفئة المختارة مبدئياً.
+  ///
+  /// إن جاء المستخدم من اختصار في الشاشة الرئيسية ("نساء" مثلاً)
+  /// نختار تلك الفئة، وإلا "مريح" كما في التصميم — أو الأولى إن لم
+  /// تكن موجودة في القائمة القادمة من القاعدة.
+  int _defaultIndexFor(List<VehicleType> vehicles) {
+    final wanted = widget.preferredCategory;
+    if (wanted != null) {
+      final i = vehicles.indexWhere((v) => v.category.name == wanted);
+      if (i >= 0) return i;
+    }
+
+    final comfort = vehicles.indexWhere(
+      (v) => v.category == VehicleCategory.comfort,
+    );
+    return comfort >= 0 ? comfort : 0;
+  }
+
+  /// يفتح نافذة إدخال الكوبون ويحفظ الخصم عند قبوله.
+  Future<void> _openPromoSheet(int? fare) async {
+    final result = await showPromoSheet(
+      context,
+      ref,
+      fare: fare ?? 0,
+      appliedCode: _promoCode,
+    );
+    if (result == null || !mounted) return;
+
+    setState(() {
+      _promoCode = result.code;
+      _discount = result.discount;
+    });
+  }
+
   /// ينشئ الرحلة في القاعدة ثم ينتقل لشاشة البحث عن سائق.
   Future<void> _confirm(VehicleType vehicle) async {
     setState(() => _isRequesting = true);
+
+    final l10n = L10n.of(context);
 
     // الموقع الحقيقي إن توفّر، وإلا مركز عدن حتى لا يفشل الطلب.
     final loc = ref.read(locationProvider).valueOrNull;
@@ -73,9 +125,9 @@ class _VehicleSelectionScreenState
     try {
       final rideId = await ref.read(rideRepositoryProvider).requestRide(
             vehicleTypeId: vehicle.id,
-            pickupAddress: loc?.label ?? L10n.of(context).myLocation,
-            pickupLat: loc?.lat ?? 12.7794,
-            pickupLng: loc?.lng ?? 45.0367,
+            pickupAddress: loc?.address ?? l10n.myLocation,
+            pickupLat: loc?.lat ?? kAdenCenter.latitude,
+            pickupLng: loc?.lng ?? kAdenCenter.longitude,
             destAddress: widget.destAddress.isEmpty
                 ? widget.destName
                 : widget.destAddress,
@@ -88,22 +140,40 @@ class _VehicleSelectionScreenState
             paymentMethod: _paymentMethod,
           );
 
+      // الكوبون يُسجَّل بعد وجود الرحلة، لأن `redeem_promo` تربطه بها
+      // وتكتب الخصم في صفّها. فشله لا يُلغي الرحلة — الراكب طلبها
+      // بالفعل — لكن لا نصمت عنه.
+      if (_promoCode != null) {
+        final applied = await ref.read(promoRepositoryProvider).redeem(
+              code: _promoCode!,
+              rideId: rideId,
+            );
+        if (!applied.valid && mounted) {
+          _snack(promoMessage(l10n, applied));
+        }
+      }
+
       if (!mounted) return;
       context.push('${AppRoutes.finding}?ride=$rideId');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(L10n.of(context).requestFailed)),
-      );
+      _snack(l10n.requestFailed);
     } finally {
       if (mounted) setState(() => _isRequesting = false);
     }
+  }
+
+  void _snack(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = L10n.of(context);
+    final language = Localizations.localeOf(context).languageCode;
     final vehiclesAsync = ref.watch(vehicleTypesProvider);
     final vehicles = vehiclesAsync.valueOrNull ?? const <VehicleType>[];
 
@@ -112,9 +182,18 @@ class _VehicleSelectionScreenState
     final distanceKm = _tripDistanceKm;
 
     // القائمة تصل غير متزامنة، فقد يتجاوز الفهرس الافتراضي طولها.
-    final selectedIndex =
-        vehicles.isEmpty ? 0 : _selectedIndex.clamp(0, vehicles.length - 1);
+    final selectedIndex = vehicles.isEmpty
+        ? 0
+        : (_selectedIndex ?? _defaultIndexFor(vehicles))
+            .clamp(0, vehicles.length - 1);
     final selected = vehicles.isEmpty ? null : vehicles[selectedIndex];
+
+    // مصدر واحد للسعر المعروض: البطاقة والزر وطلب الرحلة.
+    final selectedFare = selected == null
+        ? null
+        : FareCalculator.estimate(vehicle: selected, distanceKm: distanceKm);
+    final selectedTotal =
+        ((selectedFare?.total ?? 0) - _discount).clamp(0, 1 << 31);
 
     return Scaffold(
       body: Stack(
@@ -144,7 +223,7 @@ class _VehicleSelectionScreenState
                         borderRadius: BorderRadius.circular(22),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.12),
+                            color: Colors.black.withValues(alpha: 0.12),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -163,7 +242,7 @@ class _VehicleSelectionScreenState
                                   ref
                                           .watch(locationProvider)
                                           .valueOrNull
-                                          ?.label ??
+                                          ?.address ??
                                       l10n.myLocation,
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     fontWeight: FontWeight.w600,
@@ -204,7 +283,7 @@ class _VehicleSelectionScreenState
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
+                    color: Colors.black.withValues(alpha: 0.12),
                     blurRadius: 32,
                     offset: const Offset(0, -8),
                   ),
@@ -310,9 +389,41 @@ class _VehicleSelectionScreenState
                                   setState(() => _paymentMethod = 'cash'),
                             ),
                             const SizedBox(width: 8),
-                            _PromoChip(onTap: () {}),
+                            _PromoChip(
+                              code: _promoCode,
+                              onTap: () => _openPromoSheet(selectedFare?.total),
+                            ),
                           ],
                         ),
+                        // ملخّص الخصم يظهر فقط عند تطبيق كوبون.
+                        if (_discount > 0) ...[
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.local_offer_rounded,
+                                size: 14,
+                                color: MishwarakColors.success,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                l10n.discount,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: MishwarakColors.success,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '-${formatMoney(_discount)} ${l10n.currency}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: MishwarakColors.success,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
@@ -346,7 +457,9 @@ class _VehicleSelectionScreenState
                                   child: Text(
                                     selected == null
                                         ? l10n.loading
-                                        : l10n.orderVehicle(selected.nameAr),
+                                        : l10n.orderVehicle(
+                                            selected.name(language),
+                                          ),
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontSize: 16,
@@ -358,12 +471,17 @@ class _VehicleSelectionScreenState
                                 if (selected != null)
                                   Flexible(
                                     child: Text(
-                                      '  · ${formatMoney(selected.price)} ر.ي',
+                                      // الأجرة المحسوبة نفسها المعروضة على
+                                      // البطاقة. كان الزر يعرض `selected.price`
+                                      // (السعر الأساسي بلا أجرة المسافة)،
+                                      // فيرى الراكب سعرين مختلفين في شاشة
+                                      // واحدة ويُخصم منه ثالث.
+                                      '  · ${formatMoney(selectedTotal)} ${l10n.currency}',
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
-                                        color: Colors.white.withOpacity(0.7),
+                                        color: Colors.white.withValues(alpha: 0.7),
                                       ),
                                     ),
                                   ),
@@ -420,6 +538,10 @@ class _VehicleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = L10n.of(context);
+    final language = Localizations.localeOf(context).languageCode;
+    final badge = vehicle.badge(language);
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -428,7 +550,7 @@ class _VehicleCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: selected
-              ? MishwarakColors.primary.withOpacity(0.10)
+              ? MishwarakColors.primary.withValues(alpha: 0.10)
               : Colors.transparent,
           border: Border.all(
             color: selected ? MishwarakColors.primary : Colors.transparent,
@@ -462,13 +584,13 @@ class _VehicleCard extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          vehicle.nameAr,
+                          vehicle.name(language),
                           style: theme.textTheme.headlineSmall
                               ?.copyWith(fontWeight: FontWeight.w800),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (vehicle.badgeAr != null) ...[
+                      if (badge != null) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -478,7 +600,7 @@ class _VehicleCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            vehicle.badgeAr!,
+                            badge,
                             style: const TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.w700,
@@ -491,7 +613,8 @@ class _VehicleCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '🕐 ${vehicle.etaMinutes} دقائق · ${vehicle.descriptionAr}',
+                    '🕐 ${l10n.vehicleEta(vehicle.etaMinutes)}'
+                    ' · ${vehicle.description(language)}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: MishwarakColors.lightTextMuted,
                     ),
@@ -614,7 +737,7 @@ class _PaymentChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: selected
-                ? MishwarakColors.primary.withOpacity(0.15)
+                ? MishwarakColors.primary.withValues(alpha: 0.15)
                 : theme.colorScheme.surface,
             border: Border.all(
               color: selected ? MishwarakColors.primary : theme.dividerColor,
@@ -642,30 +765,45 @@ class _PaymentChip extends StatelessWidget {
 
 // ═══════════════ شريحة كوبون ═══════════════
 class _PromoChip extends StatelessWidget {
+  /// الرمز المطبَّق، أو `null` قبل تطبيق أي كوبون.
+  final String? code;
   final VoidCallback onTap;
-  const _PromoChip({required this.onTap});
+
+  const _PromoChip({this.code, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final applied = code != null;
+    final tint =
+        applied ? MishwarakColors.success : MishwarakColors.accent;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        constraints: const BoxConstraints(maxWidth: 130),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: MishwarakColors.accent.withOpacity(0.15),
-          border: Border.all(color: MishwarakColors.accent.withOpacity(0.4)),
+          color: tint.withValues(alpha: 0.15),
+          border: Border.all(color: tint.withValues(alpha: 0.4)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.local_offer_outlined,
-                size: 16, color: MishwarakColors.accent),
+            Icon(
+              applied ? Icons.check_circle_rounded : Icons.local_offer_outlined,
+              size: 16,
+              color: tint,
+            ),
             const SizedBox(width: 6),
-            Text(
-              L10n.of(context).coupon,
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
+            Flexible(
+              child: Text(
+                code ?? L10n.of(context).coupon,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
             ),
           ],
         ),

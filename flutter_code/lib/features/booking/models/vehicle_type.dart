@@ -16,6 +16,8 @@ enum VehicleCategory {
 
 @freezed
 class VehicleType with _$VehicleType {
+  const VehicleType._();
+
   const factory VehicleType({
     required String id,
     required VehicleCategory category,
@@ -36,6 +38,29 @@ class VehicleType with _$VehicleType {
 
   factory VehicleType.fromJson(Map<String, dynamic> json) =>
       _$VehicleTypeFromJson(json);
+
+  // ─────────── النصوص بلغة الواجهة ───────────
+  // النموذج يحمل اللغتين من `vehicle_types`، لكن الشاشات كانت تقرأ
+  // الحقول العربية دائماً — فيرى مستخدم الإنجليزية "سائقة للنساء"
+  // داخل واجهة إنجليزية. هذه الدوال تختار الحقل الصحيح، وترجع
+  // للّغة الأخرى إن كانت الترجمة فارغة في القاعدة.
+
+  String name(String languageCode) => _pick(languageCode, nameEn, nameAr);
+
+  String description(String languageCode) =>
+      _pick(languageCode, descriptionEn, descriptionAr);
+
+  String? badge(String languageCode) {
+    final picked = _pick(languageCode, badgeEn ?? '', badgeAr ?? '');
+    return picked.isEmpty ? null : picked;
+  }
+
+  static String _pick(String languageCode, String en, String ar) {
+    final preferred = languageCode == 'en' ? en : ar;
+    if (preferred.trim().isNotEmpty) return preferred;
+    // الرجوع للّغة الأخرى أفضل من فراغ في البطاقة.
+    return (languageCode == 'en' ? ar : en).trim();
+  }
 }
 
 /// بيانات ثابتة - في الإنتاج تأتي من الـ API

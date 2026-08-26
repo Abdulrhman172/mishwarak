@@ -26,7 +26,7 @@ class GlassButton extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Material(
-          color: theme.cardColor.withOpacity(0.85),
+          color: theme.cardColor.withValues(alpha: 0.85),
           child: InkWell(
             onTap: onTap,
             child: SizedBox(
@@ -67,7 +67,7 @@ class GlassPill extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Material(
-          color: theme.cardColor.withOpacity(0.85),
+          color: theme.cardColor.withValues(alpha: 0.85),
           child: InkWell(
             onTap: onTap,
             child: Padding(

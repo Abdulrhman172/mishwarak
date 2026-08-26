@@ -118,7 +118,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           height: 180,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: slide.color.withOpacity(0.12),
+                            color: slide.color.withValues(alpha: 0.12),
                           ),
                           child: Icon(slide.icon, size: 84, color: slide.color),
                         ),
@@ -171,7 +171,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPressed: () => _next(slides.length),
                 style: ElevatedButton.styleFrom(
                   elevation: 8,
-                  shadowColor: MishwarakColors.primary.withOpacity(0.4),
+                  shadowColor: MishwarakColors.primary.withValues(alpha: 0.4),
                 ),
                 child: Text(_isLast(slides.length) ? l10n.onboardStart : l10n.next),
               ),

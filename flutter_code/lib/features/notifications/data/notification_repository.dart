@@ -9,8 +9,14 @@ import '../../../core/supabase/supabase_service.dart';
 class AppNotification {
   final String id;
   final String type;
+
+  /// النص كما خُزِّن — بلغة واحدة، يُستخدم حين لا يعرف التطبيق النوع.
   final String title;
   final String? subtitle;
+
+  /// بيانات الإشعار مفصولة عن نصّه، لبناء نص مترجَم عند العرض.
+  final Map<String, dynamic> payload;
+
   final bool isRead;
   final DateTime createdAt;
 
@@ -19,9 +25,27 @@ class AppNotification {
     required this.type,
     required this.title,
     this.subtitle,
+    this.payload = const {},
     required this.isRead,
     required this.createdAt,
   });
+
+  String? get _from => payload['from'] as String?;
+  String? get _to => payload['to'] as String?;
+
+  /// عنوان مترجَم للأنواع المعروفة، وإلا النص المخزَّن.
+  String localizedTitle(String Function(String type) translate) {
+    final translated = translate(type);
+    return translated.isEmpty ? title : translated;
+  }
+
+  /// تفصيل مترجَم — يُبنى من `payload` لا من النص المخزَّن.
+  String? localizedSubtitle(String Function(String from, String to) route) {
+    final from = _from;
+    final to = _to;
+    if (from != null && to != null) return route(from, to);
+    return subtitle;
+  }
 }
 
 class NotificationRepository {
@@ -82,6 +106,8 @@ class NotificationRepository {
         type: row['type'] as String? ?? 'general',
         title: row['title'] as String? ?? '',
         subtitle: row['subtitle'] as String?,
+        // العمود أُضيف لاحقاً، فقد تصل صفوف أقدم بلا قيمة.
+        payload: (row['payload'] as Map?)?.cast<String, dynamic>() ?? const {},
         isRead: row['is_read'] as bool? ?? false,
         createdAt: DateTime.parse(row['created_at'] as String),
       );

@@ -4,6 +4,11 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<!-- مفتاح الخرائط يأتي من ios/Flutter/Secrets.xcconfig المُستثنى
+	     من Git، فلا يُرفع مع الكود. Xcode يستبدل $(MAPS_API_KEY)
+	     وقت البناء، ويقرأه AppDelegate من الحزمة. -->
+	<key>GMSApiKey</key>
+	<string>$(MAPS_API_KEY)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

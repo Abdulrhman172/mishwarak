@@ -3,10 +3,12 @@
 // ═══════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../l10n/app_localizations.dart';
+import '../../core/router/app_router.dart';
 import '../ride/data/ride_repository.dart';
 
 class HistoryScreen extends ConsumerWidget {
@@ -29,9 +31,8 @@ class HistoryScreen extends ConsumerWidget {
         ],
       ),
       body: history.when(
-        data: (trips) => trips.isEmpty
-            ? const _EmptyHistory()
-            : _HistoryList(trips: trips),
+        data: (trips) =>
+            trips.isEmpty ? const _EmptyHistory() : _HistoryList(trips: trips),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => _EmptyHistory(message: l10n.tripsFailed),
       ),
@@ -120,10 +121,10 @@ class _HistoryList extends StatelessWidget {
             itemCount: trips.length,
             itemBuilder: (context, i) {
               final trip = trips[i];
-              final day = formatDayLabel(trip.requestedAt);
+              final day = formatDayLabel(context, trip.requestedAt);
               // عنوان التاريخ يظهر مرة واحدة لكل يوم
-              final showDate =
-                  i == 0 || formatDayLabel(trips[i - 1].requestedAt) != day;
+              final showDate = i == 0 ||
+                  formatDayLabel(context, trips[i - 1].requestedAt) != day;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -191,117 +192,162 @@ class _TripCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = L10n.of(context);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: theme.dividerColor),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
         children: [
-          // خريطة مصغّرة
-          Container(
-            width: 66,
-            height: 66,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: isDark
-                  ? MishwarakColors.mapBgDark
-                  : MishwarakColors.mapBgLight,
-            ),
-            child: const Icon(
-              Icons.map_outlined,
-              color: MishwarakColors.lightTextLight,
-              size: 24,
-            ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: _details(context, theme, isDark),
           ),
-          const SizedBox(width: 12),
-
-          // التفاصيل
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
+          // رحلة مكتملة بلا تقييم: الطريق الوحيد لتقييمها كان شاشة
+          // التقييم التي تظهر مرة واحدة فور انتهاء الرحلة — فإن أغلقها
+          // الراكب ضاعت الفرصة نهائياً.
+          if (trip.isRateable)
+            InkWell(
+              onTap: () => context.push('${AppRoutes.rating}?ride=${trip.id}'),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: MishwarakColors.accent.withValues(alpha: 0.10),
+                  border: Border(
+                    top: BorderSide(color: theme.dividerColor),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      formatTime(trip.requestedAt),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontSize: 12,
-                        color: MishwarakColors.lightTextMuted,
-                      ),
+                    const Icon(
+                      Icons.star_outline_rounded,
+                      size: 16,
+                      color: MishwarakColors.accent,
                     ),
                     const SizedBox(width: 6),
-                    if (trip.cancelled)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: MishwarakColors.danger.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          L10n.of(context).cancelledTrip,
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            color: MishwarakColors.danger,
-                          ),
-                        ),
+                    Text(
+                      l10n.rateThisTrip,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
-                    if (trip.rating != null) ...[
-                      const Icon(
-                        Icons.star_rounded,
-                        size: 12,
-                        color: MishwarakColors.accent,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${trip.rating}.0',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
+                    ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                _Endpoint(label: trip.fromAddress, isDestination: false),
-                const SizedBox(height: 4),
-                _Endpoint(label: trip.toAddress, isDestination: true),
-              ],
+              ),
             ),
-          ),
-
-          // السعر
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                formatMoney(trip.fare),
-                style: theme.textTheme.headlineSmall,
-              ),
-              Text(
-                L10n.of(context).currency,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: MishwarakColors.lightTextMuted,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
+    );
+  }
+
+  Widget _details(BuildContext context, ThemeData theme, bool isDark) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // خريطة مصغّرة
+        Container(
+          width: 66,
+          height: 66,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color:
+                isDark ? MishwarakColors.mapBgDark : MishwarakColors.mapBgLight,
+          ),
+          child: const Icon(
+            Icons.map_outlined,
+            color: MishwarakColors.lightTextLight,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        // التفاصيل
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    formatTime(trip.requestedAt),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: 12,
+                      color: MishwarakColors.lightTextMuted,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  if (trip.cancelled)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: MishwarakColors.danger.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        L10n.of(context).cancelledTrip,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: MishwarakColors.danger,
+                        ),
+                      ),
+                    ),
+                  if (trip.rating != null) ...[
+                    const Icon(
+                      Icons.star_rounded,
+                      size: 12,
+                      color: MishwarakColors.accent,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      '${trip.rating}.0',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 6),
+              _Endpoint(label: trip.fromAddress, isDestination: false),
+              const SizedBox(height: 4),
+              _Endpoint(label: trip.toAddress, isDestination: true),
+            ],
+          ),
+        ),
+
+        // السعر
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              formatMoney(trip.fare),
+              style: theme.textTheme.headlineSmall,
+            ),
+            Text(
+              L10n.of(context).currency,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: MishwarakColors.lightTextMuted,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

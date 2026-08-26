@@ -62,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen>
                   height: 96,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.18),
+                    color: Colors.white.withValues(alpha: 0.18),
                   ),
                   child: const Icon(
                     Icons.directions_car_filled_rounded,
@@ -84,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen>
                 Text(
                   l10n.appTagline,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withValues(alpha: 0.85),
                     fontSize: 14,
                   ),
                 ),

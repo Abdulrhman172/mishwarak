@@ -9,8 +9,18 @@ import GoogleMaps
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     // ═══ مفتاح Google Maps ═══
-    // ضع مفتاح iOS الخاص بك بدل YOUR_IOS_MAPS_API_KEY.
-    GMSServices.provideAPIKey("YOUR_IOS_MAPS_API_KEY")
+    // يُقرأ من Info.plist الذي يملؤه ios/Flutter/Secrets.xcconfig
+    // (مُستثنى من Git). كان مكتوباً هنا مباشرةً، وهذا الملف متتبَّع —
+    // أي أن أول لصق للمفتاح كان سيُسرّبه في تاريخ المستودع.
+    //
+    // بلا مفتاح لا نستدعي provideAPIKey إطلاقاً: تمريره فارغاً يجعل
+    // الحزمة تُسجّل خطأً في كل إقلاع، بينما التطبيق مُعدّ أصلاً لعرض
+    // خريطة بديلة عند غيابه (راجع MapView.isAvailable).
+    if let key = Bundle.main.object(forInfoDictionaryKey: "GMSApiKey") as? String,
+       !key.isEmpty,
+       !key.hasPrefix("$(") {
+      GMSServices.provideAPIKey(key)
+    }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

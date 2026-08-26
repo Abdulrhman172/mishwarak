@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../providers/locale_provider.dart';
 import 'location_service.dart';
 
 /// موقع المستخدم مع عنوانه المقروء.
@@ -18,15 +19,23 @@ class UserLocation {
 
   const UserLocation({required this.lat, required this.lng, this.address});
 
-  /// النص المعروض في بطاقة المسار.
-  String get label => address ?? 'موقعي الحالي';
+  /// هل وصل العنوان المقروء؟
+  ///
+  /// حين لا يصل، تختار الواجهة نصّاً مترجَماً بنفسها. النموذج لا يحمل
+  /// نصاً افتراضياً لأنه لا يعرف لغة المستخدم — وكان يحمل "موقعي
+  /// الحالي" بالعربية فيظهر داخل واجهة إنجليزية.
+  bool get hasAddress => address != null && address!.isNotEmpty;
 
   UserLocation copyWith({String? address}) =>
       UserLocation(lat: lat, lng: lng, address: address ?? this.address);
 }
 
 class LocationNotifier extends StateNotifier<AsyncValue<UserLocation?>> {
-  LocationNotifier() : super(const AsyncValue.data(null));
+  LocationNotifier({this.languageCode = 'ar'})
+      : super(const AsyncValue.data(null));
+
+  /// لغة أسماء الأماكن القادمة من الـ geocoding.
+  final String languageCode;
 
   /// آخر سبب فشل — لعرض الرسالة المناسبة في الواجهة.
   LocationStatus? lastStatus;
@@ -66,7 +75,9 @@ class LocationNotifier extends StateNotifier<AsyncValue<UserLocation?>> {
 
     try {
       // اللغة تُضبط عالمياً في هذا الإصدار، لا كوسيط لكل استدعاء.
-      await setLocaleIdentifier('ar');
+      // كانت مثبّتة على 'ar' فيظهر اسم الحي بالعربية داخل واجهة
+      // إنجليزية؛ الآن تتبع لغة التطبيق.
+      await setLocaleIdentifier(languageCode);
 
       final marks = await placemarkFromCoordinates(pos.latitude, pos.longitude);
       if (marks.isEmpty) return null;
@@ -79,7 +90,9 @@ class LocationNotifier extends StateNotifier<AsyncValue<UserLocation?>> {
         m.administrativeArea,
       ].where((p) => p != null && p.isNotEmpty).cast<String>();
 
-      return parts.isEmpty ? null : parts.take(2).join('، ');
+      // الفاصلة العربية للعربية واللاتينية لغيرها.
+      final separator = languageCode == 'ar' ? '، ' : ', ';
+      return parts.isEmpty ? null : parts.take(2).join(separator);
     } catch (e) {
       debugPrint('[LocationProvider] تعذّر تحويل الإحداثيات لعنوان: $e');
       return null;
@@ -87,7 +100,12 @@ class LocationNotifier extends StateNotifier<AsyncValue<UserLocation?>> {
   }
 }
 
+/// موقع المستخدم.
+///
+/// يُعاد بناؤه عند تبديل اللغة ليُجلب اسم الحيّ بلغتها الجديدة.
 final locationProvider =
     StateNotifierProvider<LocationNotifier, AsyncValue<UserLocation?>>(
-  (ref) => LocationNotifier(),
+  (ref) => LocationNotifier(
+    languageCode: ref.watch(localeProvider).languageCode,
+  ),
 );

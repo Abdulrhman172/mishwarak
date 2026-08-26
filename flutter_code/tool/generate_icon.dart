@@ -32,7 +32,7 @@ void main() {
   out.writeAsBytesSync(encodePng(img));
 
   // نسخة مربّعة للويب/الأيقونة التكيّفية على أندرويد
-  stdout.writeln('✓ ${out.path} (${_size}×$_size)');
+  stdout.writeln('✓ ${out.path} ($_size×$_size)');
 }
 
 /// خلفية متدرّجة قطرياً من الأخضر الفاتح إلى الغامق.

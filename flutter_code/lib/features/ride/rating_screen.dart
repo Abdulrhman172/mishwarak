@@ -11,6 +11,7 @@ import '../../core/utils/formatters.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/widgets/driver_avatar.dart';
 import '../../shared/widgets/star_rating.dart';
+import 'data/rating_tags.dart';
 import 'data/ride_repository.dart';
 
 class RatingScreen extends ConsumerStatefulWidget {
@@ -26,32 +27,13 @@ class _RatingScreenState extends ConsumerState<RatingScreen> {
   static const _tips = [0, 200, 500, 1000];
 
   int _rating = 0;
-  final Set<String> _selectedTags = {};
+
+  /// مفاتيح الوسوم المختارة (`safe_driving`) لا نصوصها المعروضة —
+  /// راجع [RatingTags].
+  final Set<String> _selectedTagKeys = {};
+
   int _tip = 0;
   bool _isSubmitting = false;
-
-  /// الوسوم الإيجابية — نصوص مترجَمة، لذا دالة لا قائمة ثابتة.
-  static List<String> _goodTags(L10n l10n) => [
-        l10n.tagSafeDriving,
-        l10n.tagCleanCar,
-        l10n.tagFriendly,
-        l10n.tagOnTime,
-        l10n.tagFastRoute,
-        l10n.tagGoodMusic,
-      ];
-
-  static List<String> _badTags(L10n l10n) => [
-        l10n.tagReckless,
-        l10n.tagDirtyCar,
-        l10n.tagRude,
-        l10n.tagVeryLate,
-      ];
-
-  /// الوسوم تتبدّل حسب التقييم: 4+ إيجابية، أقل سلبية.
-  List<String> _currentTags(L10n l10n) {
-    if (_rating == 0) return const [];
-    return _rating >= 4 ? _goodTags(l10n) : _badTags(l10n);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +62,7 @@ class _RatingScreenState extends ConsumerState<RatingScreen> {
                       height: 68,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: MishwarakColors.success.withOpacity(0.15),
+                        color: MishwarakColors.success.withValues(alpha: 0.15),
                       ),
                       child: const Icon(
                         Icons.check_rounded,
@@ -181,7 +163,7 @@ class _RatingScreenState extends ConsumerState<RatingScreen> {
                         // تبديل نوع الوسوم يُلغي الاختيار السابق
                         final flipped = (v >= 4) != (_rating >= 4);
                         _rating = v;
-                        if (flipped) _selectedTags.clear();
+                        if (flipped) _selectedTagKeys.clear();
                         if (v < 4) _tip = 0;
                       }),
                     ),
@@ -204,14 +186,16 @@ class _RatingScreenState extends ConsumerState<RatingScreen> {
                               spacing: 8,
                               runSpacing: 8,
                               children: [
-                                for (final tag in _currentTags(l10n))
+                                for (final tag
+                                    in RatingTags.forRating(l10n, _rating))
                                   _TagChip(
-                                    label: tag,
-                                    selected: _selectedTags.contains(tag),
+                                    label: tag.label,
+                                    selected:
+                                        _selectedTagKeys.contains(tag.key),
                                     onTap: () => setState(() {
-                                      _selectedTags.contains(tag)
-                                          ? _selectedTags.remove(tag)
-                                          : _selectedTags.add(tag);
+                                      _selectedTagKeys.contains(tag.key)
+                                          ? _selectedTagKeys.remove(tag.key)
+                                          : _selectedTagKeys.add(tag.key);
                                     }),
                                   ),
                               ],
@@ -272,7 +256,7 @@ class _RatingScreenState extends ConsumerState<RatingScreen> {
                     backgroundColor: MishwarakColors.primary,
                     disabledBackgroundColor: theme.dividerColor,
                     elevation: canSubmit ? 6 : 0,
-                    shadowColor: MishwarakColors.primary.withOpacity(0.4),
+                    shadowColor: MishwarakColors.primary.withValues(alpha: 0.4),
                   ),
                   child: _isSubmitting
                       ? const SizedBox(
@@ -299,7 +283,7 @@ class _RatingScreenState extends ConsumerState<RatingScreen> {
       await ref.read(rideRepositoryProvider).submitRating(
             rideId: widget.rideId,
             rating: _rating,
-            tags: _selectedTags.toList(),
+            tagKeys: _selectedTagKeys.toList(),
             tip: _tip,
           );
       if (!mounted) return;

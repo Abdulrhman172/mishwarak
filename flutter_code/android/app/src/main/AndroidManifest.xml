@@ -35,12 +35,12 @@
             </intent-filter>
         </activity>
         <!-- ═══ مفتاح Google Maps ═══
-             ضع مفتاحك بدل YOUR_ANDROID_MAPS_API_KEY.
-             الأفضل: احفظه في android/local.properties (غير مرفوع لـ Git)
-             ثم مرّره هنا عبر manifestPlaceholders في build.gradle. -->
+             القيمة تأتي من android/local.properties (مُستثنى من Git)
+             عبر manifestPlaceholders في app/build.gradle.kts.
+             لا تكتب المفتاح هنا — هذا الملف متتبَّع في المستودع. -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_ANDROID_MAPS_API_KEY"/>
+            android:value="${MAPS_API_KEY}"/>
 
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

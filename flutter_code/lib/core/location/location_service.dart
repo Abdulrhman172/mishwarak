@@ -70,18 +70,9 @@ class LocationService {
     }
   }
 
-  /// تدفّق مستمر لموقع المستخدم — يُستخدم أثناء الرحلة.
-  ///
-  /// [distanceFilter] بالمتر: لا يُصدر تحديثاً إلا بعد هذه المسافة،
-  /// لتقليل استهلاك البطارية.
-  static Stream<Position> watch({int distanceFilter = 20}) {
-    return Geolocator.getPositionStream(
-      locationSettings: LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: distanceFilter,
-      ),
-    );
-  }
+  // ملاحظة: أُزيلت `watch()` (تدفّق مستمر للموقع) لأنها لم تُستدعَ من
+  // أي شاشة. تتبّع الراكب أثناء الرحلة يأتي من موقع السائق عبر
+  // Realtime لا من جهاز الراكب — راجع `rideDriverProvider`.
 
   /// المسافة بالكيلومترات بين نقطتين — تُستخدم لحساب الأجرة.
   static double distanceKm({

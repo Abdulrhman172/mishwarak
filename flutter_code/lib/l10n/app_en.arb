@@ -207,5 +207,247 @@
   "locationServiceDisabled": "Location services are off. Enable them in device settings.",
   "locationDenied": "We need location access to set your pickup point.",
   "locationDeniedForever": "Location access is permanently denied. Open settings to allow it.",
-  "locationFailed": "Couldn't determine your location. Please try again."
+  "locationFailed": "Couldn't determine your location. Please try again.",
+
+  "menuWalletBalance": "Wallet balance",
+  "menuTopUp": "Top up",
+  "menuPromos": "Promos",
+  "menuRewards": "Rewards",
+  "menuRewardsBadge": "New",
+  "menuVip": "VIP subscription",
+  "menuHelp": "Help",
+  "signOut": "Sign out",
+  "signOutConfirm": "Do you want to sign out of your account?",
+  "comingSoon": "{feature} is coming soon",
+  "@comingSoon": {
+    "placeholders": { "feature": { "type": "String" } }
+  },
+
+  "save": "Save",
+  "edit": "Edit",
+  "delete": "Delete",
+  "remove": "Remove",
+  "close": "Close",
+  "apply": "Apply",
+  "retry": "Retry",
+  "fieldRequired": "This field is required",
+  "saved": "Saved",
+  "saveFailed": "Couldn't save. Please try again.",
+  "deleteFailed": "Couldn't delete. Please try again.",
+  "signInRequired": "Please sign in first.",
+
+  "dateToday": "Today",
+  "dateYesterday": "Yesterday",
+  "relativeNow": "Just now",
+  "relativeMinutes": "{count} min ago",
+  "@relativeMinutes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "relativeHours": "{count} h ago",
+  "@relativeHours": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "relativeDays": "{count} d ago",
+  "@relativeDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "settingsTitle": "Settings",
+  "settingsLanguage": "Language",
+  "settingsLanguageArabic": "العربية",
+  "settingsLanguageEnglish": "English",
+  "settingsAppearance": "Appearance",
+  "settingsThemeSystem": "System",
+  "settingsThemeLight": "Light",
+  "settingsThemeDark": "Dark",
+  "settingsAbout": "About",
+  "settingsVersion": "Version",
+  "settingsDiagnostics": "Service status",
+  "settingsBackendOn": "Database: connected",
+  "settingsBackendOff": "Database: not configured",
+  "settingsMapsOn": "Maps: enabled",
+  "settingsMapsOff": "Maps: fallback",
+  "settingsTerms": "Terms of use",
+  "settingsPrivacy": "Privacy policy",
+
+  "editProfile": "Edit profile",
+  "fullNameLabel": "Full name",
+  "emailLabel": "Email address",
+  "emailInvalid": "Invalid email address",
+  "phoneNotEditable": "Your phone number is your sign-in method and can't be changed here.",
+
+  "addPlaceTitle": "New address",
+  "editPlaceTitle": "Edit address",
+  "placeNameLabel": "Place name",
+  "placeAddressLabel": "Address",
+  "placeKindHome": "Home",
+  "placeKindWork": "Work",
+  "placeKindOther": "Other",
+  "deletePlaceConfirm": "Remove \"{name}\" from your saved addresses?",
+  "@deletePlaceConfirm": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "addContactTitle": "Emergency contact",
+  "editContactTitle": "Edit contact",
+  "contactNameLabel": "Name",
+  "contactPhoneLabel": "Phone number",
+  "phoneInvalid": "Invalid phone number",
+  "deleteContactConfirm": "Remove \"{name}\" from your emergency contacts?",
+  "@deleteContactConfirm": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "promosTitle": "Coupons & offers",
+  "promoCodeLabel": "Coupon code",
+  "promoApplied": "Coupon applied — {amount} {currency} off",
+  "@promoApplied": {
+    "placeholders": {
+      "amount": { "type": "String" },
+      "currency": { "type": "String" }
+    }
+  },
+  "promoNotFound": "That coupon code doesn't exist.",
+  "promoExpired": "This coupon has expired.",
+  "promoNotStarted": "This coupon isn't active yet.",
+  "promoExhausted": "This coupon has been fully redeemed.",
+  "promoAlreadyUsed": "You've already used this coupon.",
+  "promoRideClosed": "A coupon can't be applied to a finished ride.",
+  "promoFailed": "Couldn't check the coupon. Please try again.",
+  "promoNone": "No offers available right now.",
+  "promoValidUntil": "Valid until {date}",
+  "@promoValidUntil": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "promoOffPercent": "{percent}% off",
+  "@promoOffPercent": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "promoOffAmount": "{amount} {currency} off",
+  "@promoOffAmount": {
+    "placeholders": {
+      "amount": { "type": "String" },
+      "currency": { "type": "String" }
+    }
+  },
+  "promoCopy": "Copy code",
+  "promoCopied": "Copied {code}",
+  "@promoCopied": {
+    "placeholders": { "code": { "type": "String" } }
+  },
+  "promoRemoved": "Coupon removed",
+  "discount": "Discount",
+  "totalAfterDiscount": "Total after discount",
+
+  "rewardsTitle": "Points",
+  "rewardsIntro": "Earn 1 point for every 100 YER you spend on rides.",
+  "rewardsBalance": "Your balance",
+  "rewardsTierSilver": "Silver",
+  "rewardsTierGold": "Gold",
+  "rewardsTierPlatinum": "Platinum",
+  "rewardsTierAt": "at {points} points",
+  "@rewardsTierAt": {
+    "placeholders": { "points": { "type": "String" } }
+  },
+  "rewardsPerkFreeRide": "A free ride every 5,000 points",
+  "rewardsPerkPriority": "Priority driver matching",
+  "rewardsPerkSupport": "Dedicated 24/7 support",
+  "rewardsCurrentTier": "Your tier: {tier}",
+  "@rewardsCurrentTier": {
+    "placeholders": { "tier": { "type": "String" } }
+  },
+
+  "vipTitle": "VIP membership",
+  "vipIntro": "Extra benefits for regular Mishwarak riders.",
+  "vipPerkDiscount": "A standing 10% off every ride",
+  "vipPerkCars": "Comfort-class cars at economy prices",
+  "vipPerkCancel": "Free cancellation, no fees",
+  "vipNotAvailable": "Membership isn't available in your area yet. We'll let you know when it launches.",
+  "notifyMe": "Notify me at launch",
+  "notifyMeDone": "We'll let you know as soon as it's available.",
+
+  "helpTitle": "Help",
+  "helpFaqTitle": "Frequently asked",
+  "helpContactTitle": "Contact us",
+  "helpCall": "Call support",
+  "helpWhatsapp": "WhatsApp",
+  "helpEmail": "Email",
+  "helpQ1": "How do I book a ride?",
+  "helpA1": "From the home screen pick your destination, choose a vehicle type, then tap the order button. The nearest available driver is assigned automatically.",
+  "helpQ2": "How do I pay?",
+  "helpA2": "Pay from your wallet balance, or in cash to the driver at the end of the ride. You choose before confirming the order.",
+  "helpQ3": "How do I cancel a ride?",
+  "helpA3": "Tap \"Cancel request\" while a driver is being found, or the cancel button on the ride screen before it starts.",
+  "helpQ4": "What does the emergency button do?",
+  "helpA4": "It places a direct call to emergency services, or sends your current location to the emergency contacts saved in your profile.",
+  "helpQ5": "How do I use a coupon?",
+  "helpA5": "On the vehicle selection screen tap \"Coupon\" and enter your code before confirming the order.",
+
+  "emergencyCallPolice": "Call emergency ({number})",
+  "@emergencyCallPolice": {
+    "placeholders": { "number": { "type": "String" } }
+  },
+  "emergencyNotifyContacts": "Send my location to emergency contacts",
+  "emergencyNoContacts": "You haven't added any emergency contacts yet.",
+  "emergencyAddContact": "Add a contact",
+  "emergencySmsBody": "I need help. My current location: {url}",
+  "@emergencySmsBody": {
+    "placeholders": { "url": { "type": "String" } }
+  },
+  "emergencySmsNoLocation": "I need help. My location isn't available.",
+  "emergencyOpenFailed": "Couldn't open the phone app on this device.",
+
+  "callDriverFailed": "Couldn't start the call to the driver.",
+  "shareTripText": "I'm on a ride with {driver} · {car} · plate {plate}",
+  "@shareTripText": {
+    "placeholders": {
+      "driver": { "type": "String" },
+      "car": { "type": "String" },
+      "plate": { "type": "String" }
+    }
+  },
+  "shareTripCopied": "Ride details copied — send them to someone you trust.",
+  "cancelRide": "Cancel ride",
+  "cancelRideConfirm": "Cancel this ride? A cancellation fee may apply if the driver is already on the way.",
+  "cancelRideFailed": "Couldn't cancel the ride. Please try again.",
+  "keepRide": "Keep the ride",
+
+  "vehicleEta": "{minutes} min",
+  "@vehicleEta": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+
+  "rateThisTrip": "Rate this trip",
+  "tripRated": "Rated",
+
+  "noPaymentMethods": "No payment method added yet.",
+  "paymentSetDefault": "Make default",
+  "paymentRemove": "Remove card",
+  "paymentRemoveConfirm": "Remove this card from your account?",
+  "paymentDefaultSet": "Set as default",
+
+  "searchingPlaces": "Searching...",
+  "searchNoResults": "No results for that search.",
+  "searchFailed": "Couldn't look up that address.",
+  "searchOnWebUnsupported": "Address search isn't available in the browser — pick a saved or recent address.",
+  "destinationNeedsLocation": "We couldn't pin coordinates for this destination, so the fare is an estimate.",
+
+  "notifRideCompleted": "Your ride is complete",
+  "notifPromo": "New offer",
+  "notifPoints": "Points earned",
+  "notifRating": "Rate your ride",
+  "notifRoute": "{from} → {to}",
+  "@notifRoute": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+
+  "serviceSchedulePrompt": "Scheduled rides are coming soon — you can book right now instead.",
+  "profileUpdated": "Profile updated",
+  "placeSaved": "Address saved",
+  "placeDeleted": "Address deleted",
+  "contactSaved": "Contact saved",
+  "contactDeleted": "Contact deleted"
 }

@@ -1,8 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // ride_repository.dart - إنشاء الرحلات وتتبّعها وتقييمها
 // ═══════════════════════════════════════════════════════════════
-import 'dart:math' as math;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -48,6 +46,8 @@ class RideDetails {
   final double destLat;
   final double destLng;
   final int fare;
+  final int discount;
+  final String paymentMethod;
 
   const RideDetails({
     required this.id,
@@ -61,6 +61,8 @@ class RideDetails {
     required this.destLat,
     required this.destLng,
     required this.fare,
+    this.discount = 0,
+    this.paymentMethod = 'wallet',
   });
 
   /// السائق في طريقه إلى الراكب (لم تبدأ الرحلة بعد).
@@ -69,6 +71,12 @@ class RideDetails {
 
   bool get isCompleted => status == 'completed';
   bool get isCancelled => status == 'cancelled';
+
+  /// انتهت الرحلة بأي نتيجة — لا تقبل تعديلاً بعدها.
+  bool get isClosed => isCompleted || isCancelled;
+
+  /// المبلغ المستحق فعلاً بعد الخصم.
+  int get payable => (fare - discount).clamp(0, fare);
 
   static RideDetails fromRow(Map<String, dynamic> row) => RideDetails(
         id: row['id'] as String,
@@ -82,6 +90,8 @@ class RideDetails {
         destLat: (row['dest_lat'] as num?)?.toDouble() ?? 0,
         destLng: (row['dest_lng'] as num?)?.toDouble() ?? 0,
         fare: (row['fare'] as num?)?.toInt() ?? 0,
+        discount: (row['discount'] as num?)?.toInt() ?? 0,
+        paymentMethod: row['payment_method'] as String? ?? 'wallet',
       );
 }
 
@@ -104,6 +114,9 @@ class RideSummary {
     this.cancelled = false,
     this.rating,
   });
+
+  /// رحلة مكتملة بلا تقييم — يمكن تقييمها من السجل.
+  bool get isRateable => !cancelled && rating == null;
 }
 
 class RideRepository {
@@ -156,93 +169,18 @@ class RideRepository {
     return row['id'] as String;
   }
 
-  /// يبحث عن أقرب سائق متاح لنوع المركبة المطلوب ويُعيّنه للرحلة.
-  ///
-  /// المطابقة تتم هنا في التطبيق مؤقتاً: نجلب السائقين المتاحين لهذا
-  /// النوع ثم نرتّبهم بالمسافة. في الإنتاج يجب نقلها إلى Edge Function
-  /// حتى لا يستطيع الراكب اختيار سائق بعينه أو تعيين سائق مشغول.
-  ///
-  /// يعيد السائق المعيَّن، أو `null` إن لم يتوفّر أحد.
-  Future<RideDriver?> matchDriver({
-    required String rideId,
-    required String vehicleTypeId,
-    required double pickupLat,
-    required double pickupLng,
-  }) async {
-    if (!SupabaseService.isReady) return null;
-
-    try {
-      final rows = await SupabaseService.client
-          .from('drivers')
-          .select()
-          .eq('is_online', true)
-          .eq('vehicle_type_id', vehicleTypeId);
-
-      if (rows.isEmpty) return null;
-
-      // نستبعد من لا يملك موقعاً — لا يمكن ترتيبه بالقرب.
-      final candidates = rows
-          .where((r) => r['current_lat'] != null && r['current_lng'] != null)
-          .toList();
-
-      if (candidates.isEmpty) return null;
-
-      candidates.sort((a, b) {
-        final da = _distanceSquared(
-          pickupLat,
-          pickupLng,
-          (a['current_lat'] as num).toDouble(),
-          (a['current_lng'] as num).toDouble(),
-        );
-        final db = _distanceSquared(
-          pickupLat,
-          pickupLng,
-          (b['current_lat'] as num).toDouble(),
-          (b['current_lng'] as num).toDouble(),
-        );
-        return da.compareTo(db);
-      });
-
-      final nearest = candidates.first;
-      final driverId = nearest['id'] as String;
-
-      await SupabaseService.client.from('rides').update({
-        'driver_id': driverId,
-        'status': 'driver_assigned',
-      }).eq('id', rideId);
-
-      return _driverFromRow(nearest);
-    } catch (e) {
-      debugPrint('[RideRepository] فشلت مطابقة السائق ($e).');
-      return null;
-    }
-  }
-
-  /// مربّع المسافة — يكفي للمقارنة والترتيب دون تكلفة الجذر التربيعي.
-  ///
-  /// نصحّح فرق خطوط الطول بجيب تمام العرض، وإلا بدا السائقون شرقاً/غرباً
-  /// أقرب مما هم عليه فعلاً.
-  static double _distanceSquared(
-    double lat1,
-    double lng1,
-    double lat2,
-    double lng2,
-  ) {
-    final dLat = lat1 - lat2;
-    final dLng = (lng1 - lng2) * math.cos(lat1 * math.pi / 180);
-    return dLat * dLat + dLng * dLng;
-  }
-
-  /// يتابع تغيّر حالة الرحلة لحظياً (requested → arriving → on_trip → completed).
-  Stream<String> watchStatus(String rideId) {
-    if (!SupabaseService.isReady) return const Stream.empty();
-
-    return SupabaseService.client
-        .from('rides')
-        .stream(primaryKey: ['id'])
-        .eq('id', rideId)
-        .map((rows) => rows.isEmpty ? 'requested' : rows.first['status'] as String);
-  }
+  // ملاحظة: لا توجد مطابقة سائق في التطبيق.
+  //
+  // كانت `matchDriver()` تجلب السائقين المتاحين وتُعيّن الأقرب بتحديث
+  // `rides.driver_id` من العميل. أُزيلت لثلاثة أسباب:
+  //   • الراكب كان يستطيع تعيين سائق بعينه، أو سائقاً مشغولاً برحلة
+  //     أخرى (الاستعلام لم يستبعد أصحاب الرحلات الجارية).
+  //   • قراءتها تتطلّب كشف جدول السائقين كاملاً لكل مستخدم مسجَّل،
+  //     بأسمائهم وأرقامهم ومواقعهم الحيّة.
+  //   • `rides.driver_id` صار محميّاً بمُشغِّل `protect_ride_columns`،
+  //     فالتحديث من العميل يُرَدّ بلا أثر.
+  // التعيين الآن في `assign_nearest_driver` داخل القاعدة — راجع
+  // القسم 14 من `supabase/schema.sql`.
 
   /// يتابع الرحلة كاملة لحظياً — الحالة والسائق المعيَّن والسعر.
   Stream<RideDetails?> watchRide(String rideId) {
@@ -271,25 +209,9 @@ class RideRepository {
     }
   }
 
-  /// بيانات السائق المعيَّن — تُجلب منفصلة لأن `stream` لا يدعم الـ join.
-  Future<RideDriver?> fetchDriver(String driverId) async {
-    if (!SupabaseService.isReady) return null;
-
-    try {
-      final row = await SupabaseService.client
-          .from('drivers')
-          .select()
-          .eq('id', driverId)
-          .maybeSingle();
-
-      return row == null ? null : _driverFromRow(row);
-    } catch (e) {
-      debugPrint('[RideRepository] فشل جلب السائق ($e).');
-      return null;
-    }
-  }
-
   /// يتابع السائق لحظياً — موقعه يتغيّر أثناء الرحلة.
+  ///
+  /// تدفّق لا جلبة واحدة، لأن علامة السائق على الخريطة يجب أن تتحرّك.
   Stream<RideDriver?> watchDriver(String driverId) {
     if (!SupabaseService.isReady) return const Stream.empty();
 
@@ -349,32 +271,46 @@ class RideRepository {
   }
 
   /// يلغي رحلة جارية.
-  Future<void> cancelRide(String rideId, {String? reason}) async {
+  ///
+  /// لا يرسل `completed_at`: مُشغِّل `stamp_ride_lifecycle` يختمها في
+  /// القاعدة، وإرسالها من العميل يجعل وقت الإلغاء قابلاً للتزوير.
+  ///
+  /// [reasonCode] مفتاح ثابت (`passenger`) لا نص معروض، حتى يبقى
+  /// العمود قابلاً للتجميع مهما اختلفت لغة الراكب.
+  Future<void> cancelRide(String rideId, {String reasonCode = 'passenger'}) async {
     if (!SupabaseService.isReady) return;
 
     await SupabaseService.client.from('rides').update({
       'status': 'cancelled',
-      'cancel_reason': reason,
-      'completed_at': DateTime.now().toIso8601String(),
+      'cancel_reason': reasonCode,
     }).eq('id', rideId);
   }
 
   /// يرسل تقييم رحلة مكتملة.
+  ///
+  /// [tagKeys] مفاتيح ثابتة (`safe_driving`) لا نصوصاً معروضة: النص
+  /// المترجَم يختلف بلغة المُقيِّم، فيصبح العمود خليطاً لا يُجمَّع.
+  /// الترجمة للعرض تتم في الواجهة — راجع `RatingTags`.
+  ///
+  /// `driver_id` لا يُرسل عمداً؛ يملؤه مُشغِّل `fill_rating_driver` من
+  /// الرحلة نفسها، لأن الراكب لا يقرأ جدول السائقين ليؤكّده.
   Future<void> submitRating({
     required String rideId,
     required int rating,
-    List<String> tags = const [],
+    List<String> tagKeys = const [],
     int tip = 0,
     String? comment,
   }) async {
     final user = SupabaseService.currentUser;
-    if (!SupabaseService.isReady || user == null) return;
+    if (!SupabaseService.isReady || user == null) {
+      throw StateError('لا يمكن إرسال التقييم قبل تسجيل الدخول.');
+    }
 
     await SupabaseService.client.from('ride_ratings').insert({
       'ride_id': rideId,
       'passenger_id': user.id,
       'rating': rating,
-      'tags': tags,
+      'tags': tagKeys,
       'tip': tip,
       'comment': comment,
     });
@@ -394,9 +330,6 @@ final rideStreamProvider = StreamProvider.family<RideDetails?, String>(
 );
 
 /// بيانات السائق المعيَّن للرحلة، متجدّدة لحظياً.
-///
-/// تدفّق لا جلبة واحدة، لأن موقع السائق يتغيّر أثناء الرحلة ويجب أن
-/// تتحرّك علامته على الخريطة.
 final rideDriverProvider = StreamProvider.family<RideDriver?, String>(
   (ref, driverId) => ref.watch(rideRepositoryProvider).watchDriver(driverId),
 );

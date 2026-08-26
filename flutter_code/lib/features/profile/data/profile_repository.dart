@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import '../../../core/supabase/supabase_service.dart';
 
@@ -90,15 +91,42 @@ class ProfileRepository {
     }
   }
 
-  Future<void> updateProfile({String? fullName, String? email}) async {
-    final user = SupabaseService.currentUser;
-    if (!SupabaseService.isReady || user == null) return;
+  /// يحدّث بيانات الملف الشخصي القابلة للتعديل.
+  ///
+  /// يرمي [StateError] بلا جلسة: هذه العملية يبدأها المستخدم صراحةً من
+  /// شاشة التعديل، والصمت عند الفشل يجعله يظن أن التغيير حُفظ.
+  Future<void> updateProfile({
+    String? fullName,
+    String? email,
+    String? locale,
+  }) async {
+    final user = _requireUser();
 
     await SupabaseService.client.from('profiles').update({
       if (fullName != null) 'full_name': fullName,
       if (email != null) 'email': email,
+      if (locale != null) 'locale': locale,
       'updated_at': DateTime.now().toIso8601String(),
     }).eq('id', user.id);
+  }
+
+  /// ينشئ صف الملف الشخصي إن كان مفقوداً.
+  ///
+  /// مُشغِّل `handle_new_user` يغطّي التسجيل الجديد، لكن الحسابات
+  /// الأقدم منه تبقى بلا صف فتظهر الشاشة فارغة بلا سبب واضح.
+  Future<void> ensureProfile() async {
+    final user = SupabaseService.currentUser;
+    if (!SupabaseService.isReady || user == null) return;
+
+    try {
+      await SupabaseService.client.from('profiles').upsert(
+        {'id': user.id, 'phone': user.phone, 'email': user.email},
+        onConflict: 'id',
+        ignoreDuplicates: true,
+      );
+    } catch (e) {
+      debugPrint('[ProfileRepository] تعذّر إنشاء الملف ($e).');
+    }
   }
 
   Future<List<SavedPlace>> fetchSavedPlaces() async {
@@ -135,8 +163,7 @@ class ProfileRepository {
     required double lat,
     required double lng,
   }) async {
-    final user = SupabaseService.currentUser;
-    if (!SupabaseService.isReady || user == null) return;
+    final user = _requireUser();
 
     await SupabaseService.client.from('saved_places').insert({
       'user_id': user.id,
@@ -146,6 +173,41 @@ class ProfileRepository {
       'lat': lat,
       'lng': lng,
     });
+  }
+
+  Future<void> updateSavedPlace({
+    required String id,
+    String? label,
+    String? name,
+    String? address,
+    double? lat,
+    double? lng,
+  }) async {
+    final user = _requireUser();
+
+    await SupabaseService.client
+        .from('saved_places')
+        .update({
+          if (label != null) 'label': label,
+          if (name != null) 'name': name,
+          if (address != null) 'address': address,
+          if (lat != null) 'lat': lat,
+          if (lng != null) 'lng': lng,
+        })
+        .eq('id', id)
+        // شرط زائد عن سياسة RLS عمداً: لو عُدِّلت السياسة يوماً يبقى
+        // النطاق محصوراً في صفوف المستخدم نفسه.
+        .eq('user_id', user.id);
+  }
+
+  Future<void> deleteSavedPlace(String id) async {
+    final user = _requireUser();
+
+    await SupabaseService.client
+        .from('saved_places')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
   }
 
   Future<List<EmergencyContact>> fetchEmergencyContacts() async {
@@ -176,14 +238,52 @@ class ProfileRepository {
     required String name,
     required String phone,
   }) async {
-    final user = SupabaseService.currentUser;
-    if (!SupabaseService.isReady || user == null) return;
+    final user = _requireUser();
 
     await SupabaseService.client.from('emergency_contacts').insert({
       'user_id': user.id,
       'name': name,
       'phone': phone,
     });
+  }
+
+  Future<void> updateEmergencyContact({
+    required String id,
+    String? name,
+    String? phone,
+  }) async {
+    final user = _requireUser();
+
+    await SupabaseService.client
+        .from('emergency_contacts')
+        .update({
+          if (name != null) 'name': name,
+          if (phone != null) 'phone': phone,
+        })
+        .eq('id', id)
+        .eq('user_id', user.id);
+  }
+
+  Future<void> deleteEmergencyContact(String id) async {
+    final user = _requireUser();
+
+    await SupabaseService.client
+        .from('emergency_contacts')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+  }
+
+  /// المستخدم الحالي، أو استثناء إن غاب.
+  ///
+  /// عمليات الكتابة تفشل بصوت مسموع بعكس القراءة: القراءة تكتفي
+  /// بقائمة فارغة، أما الكتابة فيجب أن تُبلّغ المستخدم أنها لم تُحفظ.
+  static User _requireUser() {
+    final user = SupabaseService.currentUser;
+    if (!SupabaseService.isReady || user == null) {
+      throw StateError('هذه العملية تتطلّب تسجيل الدخول.');
+    }
+    return user;
   }
 }
 

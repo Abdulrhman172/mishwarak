@@ -15,6 +15,7 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/widgets/glass_button.dart';
 import '../../shared/widgets/map_view.dart';
 import '../../shared/widgets/saved_place_card.dart';
+import '../../shared/widgets/emergency_sheet.dart';
 import '../../shared/widgets/service_shortcut.dart';
 import '../profile/data/profile_repository.dart';
 import '../wallet/data/wallet_repository.dart';
@@ -82,6 +83,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  /// يحجز مباشرة إلى عنوان محفوظ.
+  static void _bookTo(BuildContext context, SavedPlace place) {
+    context.push(
+      Uri(
+        path: AppRoutes.vehicle,
+        queryParameters: {
+          'name': place.name,
+          'addr': place.address,
+          'lat': '${place.lat}',
+          'lng': '${place.lng}',
+        },
+      ).toString(),
+    );
+  }
+
+  /// يفتح شاشة البحث مع فئة مركبة مُفضّلة.
+  static void _searchFor(BuildContext context, String category) {
+    context.push(
+      Uri(
+        path: AppRoutes.under(AppRoutes.search),
+        queryParameters: {'category': category},
+      ).toString(),
+    );
+  }
+
   /// يترجم [LocationStatus] لرسالة قابلة للعرض — الحالة نفسها لا تحمل
   /// نصاً لأنها تُنتج في طبقة لا تعرف لغة المستخدم.
   static String _locationErrorMessage(BuildContext context, LocationStatus? status) {
@@ -128,7 +154,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       builder: (context, ref, _) {
                         final balance = ref.watch(walletBalanceProvider);
                         return GestureDetector(
-                          onTap: () => context.push('${AppRoutes.home}/wallet'),
+                          onTap: () => context.push(AppRoutes.under(AppRoutes.wallet)),
                           child: GlassPill(
                             icon: Icons.account_balance_wallet_outlined,
                             iconColor: MishwarakColors.primary,
@@ -180,7 +206,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   GlassButton(
                     icon: Icons.shield_outlined,
                     iconColor: MishwarakColors.danger,
-                    onTap: _showSosDialog,
+                    onTap: () => showEmergencySheet(context),
                   ),
                 ],
               ),
@@ -201,7 +227,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.12),
+                        color: Colors.black.withValues(alpha: 0.12),
                         blurRadius: 32,
                         offset: const Offset(0, -8),
                       ),
@@ -261,7 +287,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   Expanded(
                                     child: Text(
                                       loc.when(
-                                        data: (l) => l?.label ?? l10n.whereTo,
+                                        data: (l) => l?.address ?? l10n.whereTo,
                                         loading: () => l10n.locating,
                                         error: (_, __) => l10n.whereTo,
                                       ),
@@ -280,7 +306,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                           // ═══ خانة البحث ═══
                           _SearchButton(
-                            onTap: () => context.push('${AppRoutes.home}/search'),
+                            onTap: () => context.push(AppRoutes.under(AppRoutes.search)),
                           ),
                           const SizedBox(height: 14),
 
@@ -305,8 +331,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         },
                                         label: place.name,
                                         subtitle: place.address,
-                                        onTap: () => context
-                                            .push('${AppRoutes.home}/search'),
+                                        // الضغط على "المنزل" يجب أن يحجز
+                                        // إليه مباشرة، لا أن يفتح بحثاً
+                                        // فارغاً يُعيد إدخال ما اختير.
+                                        onTap: () => _bookTo(context, place),
                                       ),
                                     ),
                                     const SizedBox(width: 10),
@@ -317,8 +345,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       label: l10n.add,
                                       subtitle: l10n.newPlace,
                                       isAdd: true,
-                                      onTap: () => context
-                                          .push('${AppRoutes.home}/profile'),
+                                      onTap: () => context.push(
+                                        AppRoutes.under(AppRoutes.profile),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -328,6 +357,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           const SizedBox(height: 14),
 
                           // ═══ الخدمات السريعة ═══
+                          // كل اختصار يفتح البحث حاملاً فئة المركبة
+                          // المطلوبة، فتُختار تلقائياً في شاشة الحجز.
                           GridView.count(
                             crossAxisCount: 4,
                             shrinkWrap: true,
@@ -338,20 +369,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 icon: Icons.directions_car,
                                 label: l10n.serviceEconomy,
                                 color: MishwarakColors.secondary,
+                                onTap: () => _searchFor(context, 'economy'),
                               ),
                               ServiceShortcut(
                                 icon: Icons.workspace_premium,
                                 label: l10n.serviceVip,
                                 color: MishwarakColors.accent,
+                                onTap: () => _searchFor(context, 'vip'),
                               ),
                               ServiceShortcut(
                                 icon: Icons.female,
                                 label: l10n.serviceWomen,
                                 color: const Color(0xFFEC4899),
+                                onTap: () => _searchFor(context, 'women'),
                               ),
                               ServiceShortcut(
                                 icon: Icons.schedule,
                                 label: l10n.schedule,
+                                // الحجز المسبق غير مبنيّ في الخلفية بعد؛
+                                // نقولها بدل زرّ صامت.
+                                onTap: () {
+                                  ScaffoldMessenger.of(context)
+                                    ..hideCurrentSnackBar()
+                                    ..showSnackBar(
+                                      SnackBar(
+                                        content:
+                                            Text(l10n.serviceSchedulePrompt),
+                                      ),
+                                    );
+                                },
                                 color: MishwarakColors.success,
                               ),
                             ],
@@ -369,27 +415,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _showSosDialog() {
-    final l10n = L10n.of(context);
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(l10n.emergencyTitle),
-        content: Text(l10n.emergencyBody),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          ElevatedButton(
-            onPressed: () {
-              // TODO: تفعيل الطوارئ
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: MishwarakColors.danger),
-            child: Text(l10n.emergencyAction),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _SearchButton extends StatelessWidget {
@@ -419,7 +444,7 @@ class _SearchButton extends StatelessWidget {
                 height: 32,
                 margin: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: MishwarakColors.primary.withOpacity(0.12),
+                  color: MishwarakColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -448,7 +473,7 @@ class _SearchButton extends StatelessWidget {
                 ),
                 child: Text(
                   l10n.bookNow,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,

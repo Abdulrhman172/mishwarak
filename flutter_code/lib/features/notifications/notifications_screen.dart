@@ -104,23 +104,44 @@ class _NotifTile extends StatelessWidget {
   /// أيقونة ولون حسب نوع الإشعار المخزّن في العمود `type`.
   (IconData, Color) get _visual => switch (notif.type) {
         'promo' => (Icons.local_offer_outlined, MishwarakColors.primary),
-        'ride' => (Icons.check_circle_outline, MishwarakColors.success),
+        'ride' ||
+        'ride_completed' =>
+          (Icons.check_circle_outline, MishwarakColors.success),
         'points' => (Icons.card_giftcard, MishwarakColors.accent),
         'rating' => (Icons.star_rounded, MishwarakColors.accent),
         _ => (Icons.notifications_none_rounded, MishwarakColors.primary),
       };
 
+  /// عنوان الإشعار بلغة الواجهة للأنواع المعروفة.
+  ///
+  /// النص المخزَّن في `title` يُكتب على الخادم بلغة واحدة، فيبقى
+  /// عربياً في واجهة إنجليزية. نُترجم ما نعرف نوعه، ونستخدم المخزَّن
+  /// لما لا نعرفه (إشعارات حملات تسويقية مثلاً).
+  String _title(L10n l10n) => switch (notif.type) {
+        'ride_completed' => l10n.notifRideCompleted,
+        'promo' => l10n.notifPromo,
+        'points' => l10n.notifPoints,
+        'rating' => l10n.notifRating,
+        _ => notif.title,
+      };
+
+  /// تفصيل الإشعار — يُبنى من `payload` حين توفّر بيانات المسار.
+  String? _subtitle(L10n l10n) =>
+      notif.localizedSubtitle((from, to) => l10n.notifRoute(from, to));
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = L10n.of(context);
     final unread = !notif.isRead;
     final (icon, color) = _visual;
+    final subtitle = _subtitle(l10n);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Material(
         color: unread
-            ? MishwarakColors.primary.withOpacity(0.05)
+            ? MishwarakColors.primary.withValues(alpha: 0.05)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
@@ -151,7 +172,7 @@ class _NotifTile extends StatelessWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                   ),
                   child: Icon(icon, color: color, size: 22),
                 ),
@@ -162,15 +183,15 @@ class _NotifTile extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        notif.title,
+                        _title(l10n),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      if (notif.subtitle != null) ...[
+                      if (subtitle != null) ...[
                         const SizedBox(height: 3),
                         Text(
-                          notif.subtitle!,
+                          subtitle,
                           style: theme.textTheme.bodySmall?.copyWith(
                             fontSize: 12,
                             color: MishwarakColors.lightTextMuted,
@@ -179,7 +200,7 @@ class _NotifTile extends StatelessWidget {
                       ],
                       const SizedBox(height: 5),
                       Text(
-                        formatRelative(notif.createdAt),
+                        formatRelative(context, notif.createdAt),
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: 10,
                           color: MishwarakColors.lightTextLight,

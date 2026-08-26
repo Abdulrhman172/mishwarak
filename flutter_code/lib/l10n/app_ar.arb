@@ -207,5 +207,247 @@
   "locationServiceDisabled": "خدمة الموقع مغلقة. فعّلها من إعدادات الجهاز.",
   "locationDenied": "نحتاج إذن الموقع لتحديد نقطة انطلاقك.",
   "locationDeniedForever": "إذن الموقع مرفوض نهائياً. افتح الإعدادات واسمح بالوصول.",
-  "locationFailed": "تعذّر تحديد موقعك. حاول مرة أخرى."
+  "locationFailed": "تعذّر تحديد موقعك. حاول مرة أخرى.",
+
+  "menuWalletBalance": "رصيد المحفظة",
+  "menuTopUp": "شحن",
+  "menuPromos": "الكوبونات",
+  "menuRewards": "نظام النقاط",
+  "menuRewardsBadge": "جديد",
+  "menuVip": "اشتراك VIP",
+  "menuHelp": "المساعدة",
+  "signOut": "تسجيل الخروج",
+  "signOutConfirm": "هل تريد تسجيل الخروج من حسابك؟",
+  "comingSoon": "{feature} قيد الإنشاء",
+  "@comingSoon": {
+    "placeholders": { "feature": { "type": "String" } }
+  },
+
+  "save": "حفظ",
+  "edit": "تعديل",
+  "delete": "حذف",
+  "remove": "إزالة",
+  "close": "إغلاق",
+  "apply": "تطبيق",
+  "retry": "إعادة المحاولة",
+  "fieldRequired": "هذا الحقل مطلوب",
+  "saved": "تم الحفظ",
+  "saveFailed": "تعذّر الحفظ. حاول مرة أخرى.",
+  "deleteFailed": "تعذّر الحذف. حاول مرة أخرى.",
+  "signInRequired": "سجّل الدخول أولاً.",
+
+  "dateToday": "اليوم",
+  "dateYesterday": "أمس",
+  "relativeNow": "الآن",
+  "relativeMinutes": "قبل {count} دقيقة",
+  "@relativeMinutes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "relativeHours": "قبل {count} ساعة",
+  "@relativeHours": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "relativeDays": "قبل {count} يوم",
+  "@relativeDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "settingsTitle": "الإعدادات",
+  "settingsLanguage": "اللغة",
+  "settingsLanguageArabic": "العربية",
+  "settingsLanguageEnglish": "English",
+  "settingsAppearance": "المظهر",
+  "settingsThemeSystem": "حسب النظام",
+  "settingsThemeLight": "فاتح",
+  "settingsThemeDark": "داكن",
+  "settingsAbout": "عن التطبيق",
+  "settingsVersion": "الإصدار",
+  "settingsDiagnostics": "حالة الخدمات",
+  "settingsBackendOn": "قاعدة البيانات: متصلة",
+  "settingsBackendOff": "قاعدة البيانات: غير مهيّأة",
+  "settingsMapsOn": "الخرائط: مفعّلة",
+  "settingsMapsOff": "الخرائط: بديلة",
+  "settingsTerms": "شروط الاستخدام",
+  "settingsPrivacy": "سياسة الخصوصية",
+
+  "editProfile": "تعديل الملف الشخصي",
+  "fullNameLabel": "الاسم الكامل",
+  "emailLabel": "البريد الإلكتروني",
+  "emailInvalid": "بريد إلكتروني غير صالح",
+  "phoneNotEditable": "رقم الجوال هو وسيلة الدخول ولا يمكن تغييره هنا.",
+
+  "addPlaceTitle": "عنوان جديد",
+  "editPlaceTitle": "تعديل العنوان",
+  "placeNameLabel": "اسم المكان",
+  "placeAddressLabel": "العنوان",
+  "placeKindHome": "المنزل",
+  "placeKindWork": "العمل",
+  "placeKindOther": "آخر",
+  "deletePlaceConfirm": "حذف \"{name}\" من عناوينك المحفوظة؟",
+  "@deletePlaceConfirm": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "addContactTitle": "جهة اتصال للطوارئ",
+  "editContactTitle": "تعديل جهة الاتصال",
+  "contactNameLabel": "الاسم",
+  "contactPhoneLabel": "رقم الجوال",
+  "phoneInvalid": "رقم جوال غير صالح",
+  "deleteContactConfirm": "حذف \"{name}\" من جهات الطوارئ؟",
+  "@deleteContactConfirm": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "promosTitle": "الكوبونات والعروض",
+  "promoCodeLabel": "رمز الكوبون",
+  "promoApplied": "طُبِّق الكوبون — خصم {amount} {currency}",
+  "@promoApplied": {
+    "placeholders": {
+      "amount": { "type": "String" },
+      "currency": { "type": "String" }
+    }
+  },
+  "promoNotFound": "رمز الكوبون غير موجود.",
+  "promoExpired": "انتهت صلاحية هذا الكوبون.",
+  "promoNotStarted": "هذا الكوبون لم يبدأ بعد.",
+  "promoExhausted": "استُنفد هذا الكوبون.",
+  "promoAlreadyUsed": "استخدمت هذا الكوبون من قبل.",
+  "promoRideClosed": "لا يمكن تطبيق كوبون على رحلة منتهية.",
+  "promoFailed": "تعذّر التحقّق من الكوبون. حاول مرة أخرى.",
+  "promoNone": "لا توجد عروض متاحة حالياً.",
+  "promoValidUntil": "صالح حتى {date}",
+  "@promoValidUntil": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "promoOffPercent": "خصم {percent}%",
+  "@promoOffPercent": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "promoOffAmount": "خصم {amount} {currency}",
+  "@promoOffAmount": {
+    "placeholders": {
+      "amount": { "type": "String" },
+      "currency": { "type": "String" }
+    }
+  },
+  "promoCopy": "نسخ الرمز",
+  "promoCopied": "نُسخ الرمز {code}",
+  "@promoCopied": {
+    "placeholders": { "code": { "type": "String" } }
+  },
+  "promoRemoved": "أُزيل الكوبون",
+  "discount": "الخصم",
+  "totalAfterDiscount": "الإجمالي بعد الخصم",
+
+  "rewardsTitle": "نظام النقاط",
+  "rewardsIntro": "تكسب نقطة عن كل 100 ريال تدفعها في رحلاتك.",
+  "rewardsBalance": "رصيدك الحالي",
+  "rewardsTierSilver": "فضّي",
+  "rewardsTierGold": "ذهبي",
+  "rewardsTierPlatinum": "بلاتيني",
+  "rewardsTierAt": "عند {points} نقطة",
+  "@rewardsTierAt": {
+    "placeholders": { "points": { "type": "String" } }
+  },
+  "rewardsPerkFreeRide": "رحلة مجانية كل 5000 نقطة",
+  "rewardsPerkPriority": "أولوية في إيجاد السائق",
+  "rewardsPerkSupport": "دعم مخصّص على مدار الساعة",
+  "rewardsCurrentTier": "مستواك الحالي: {tier}",
+  "@rewardsCurrentTier": {
+    "placeholders": { "tier": { "type": "String" } }
+  },
+
+  "vipTitle": "اشتراك VIP",
+  "vipIntro": "مزايا إضافية لركّاب مِشوارَك الدائمين.",
+  "vipPerkDiscount": "خصم دائم 10% على كل رحلة",
+  "vipPerkCars": "سيارات الفئة المريحة بسعر الاقتصادي",
+  "vipPerkCancel": "إلغاء مجاني بلا رسوم",
+  "vipNotAvailable": "الاشتراك غير متاح في منطقتك بعد. سنُعلمك فور إطلاقه.",
+  "notifyMe": "أعلمني عند الإطلاق",
+  "notifyMeDone": "سنُعلمك فور توفّر الميزة.",
+
+  "helpTitle": "المساعدة",
+  "helpFaqTitle": "أسئلة شائعة",
+  "helpContactTitle": "تواصل معنا",
+  "helpCall": "اتصال بالدعم",
+  "helpWhatsapp": "واتساب",
+  "helpEmail": "البريد الإلكتروني",
+  "helpQ1": "كيف أطلب رحلة؟",
+  "helpA1": "من الشاشة الرئيسية اختر وجهتك، ثم نوع المركبة، ثم اضغط زر الطلب. سيُعيَّن أقرب سائق متاح تلقائياً.",
+  "helpQ2": "كيف أدفع؟",
+  "helpA2": "يمكنك الدفع من رصيد المحفظة أو نقداً للسائق عند نهاية الرحلة. تختار الطريقة قبل تأكيد الطلب.",
+  "helpQ3": "كيف ألغي رحلة؟",
+  "helpA3": "اضغط \"إلغاء الطلب\" أثناء البحث عن سائق، أو زر الإلغاء في شاشة الرحلة قبل بدايتها.",
+  "helpQ4": "ماذا يفعل زر الطوارئ؟",
+  "helpA4": "يفتح اتصالاً مباشراً بالطوارئ، أو يرسل رسالة بموقعك الحالي إلى جهات الطوارئ التي أضفتها في ملفك الشخصي.",
+  "helpQ5": "كيف أستخدم كوبون خصم؟",
+  "helpA5": "من شاشة اختيار المركبة اضغط \"كوبون\" وأدخل الرمز قبل تأكيد الطلب.",
+
+  "emergencyCallPolice": "اتصال بالطوارئ ({number})",
+  "@emergencyCallPolice": {
+    "placeholders": { "number": { "type": "String" } }
+  },
+  "emergencyNotifyContacts": "إرسال موقعي لجهات الطوارئ",
+  "emergencyNoContacts": "لم تُضف جهات طوارئ بعد.",
+  "emergencyAddContact": "إضافة جهة اتصال",
+  "emergencySmsBody": "أحتاج مساعدة. موقعي الحالي: {url}",
+  "@emergencySmsBody": {
+    "placeholders": { "url": { "type": "String" } }
+  },
+  "emergencySmsNoLocation": "أحتاج مساعدة. لم يتوفّر موقعي الحالي.",
+  "emergencyOpenFailed": "تعذّر فتح تطبيق الاتصال على هذا الجهاز.",
+
+  "callDriverFailed": "تعذّر بدء الاتصال بالسائق.",
+  "shareTripText": "أنا في رحلة مع {driver} · سيارة {car} · لوحة {plate}",
+  "@shareTripText": {
+    "placeholders": {
+      "driver": { "type": "String" },
+      "car": { "type": "String" },
+      "plate": { "type": "String" }
+    }
+  },
+  "shareTripCopied": "نُسخت تفاصيل الرحلة — أرسلها لمن تثق به.",
+  "cancelRide": "إلغاء الرحلة",
+  "cancelRideConfirm": "إلغاء هذه الرحلة؟ قد تُطبَّق رسوم إلغاء إذا كان السائق في طريقه إليك.",
+  "cancelRideFailed": "تعذّر إلغاء الرحلة. حاول مرة أخرى.",
+  "keepRide": "متابعة الرحلة",
+
+  "vehicleEta": "{minutes} دقائق",
+  "@vehicleEta": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+
+  "rateThisTrip": "قيّم هذه الرحلة",
+  "tripRated": "مُقيَّمة",
+
+  "noPaymentMethods": "لم تُضف طريقة دفع بعد.",
+  "paymentSetDefault": "جعله الافتراضي",
+  "paymentRemove": "إزالة البطاقة",
+  "paymentRemoveConfirm": "إزالة هذه البطاقة من حسابك؟",
+  "paymentDefaultSet": "أصبحت الطريقة الافتراضية",
+
+  "searchingPlaces": "جارٍ البحث...",
+  "searchNoResults": "لا توجد نتائج لهذا البحث.",
+  "searchFailed": "تعذّر البحث عن العنوان.",
+  "searchOnWebUnsupported": "البحث الجغرافي غير متاح على المتصفّح — اختر من العناوين المحفوظة أو الأخيرة.",
+  "destinationNeedsLocation": "لم نتمكن من تحديد إحداثيات هذه الوجهة، لذا الأجرة تقديرية.",
+
+  "notifRideCompleted": "اكتملت رحلتك",
+  "notifPromo": "عرض جديد",
+  "notifPoints": "نقاط جديدة",
+  "notifRating": "قيّم رحلتك",
+  "notifRoute": "{from} ← {to}",
+  "@notifRoute": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+
+  "serviceSchedulePrompt": "الحجز المسبق قادم قريباً — يمكنك الطلب الآن مباشرة.",
+  "profileUpdated": "حُدِّث ملفك الشخصي",
+  "placeSaved": "حُفظ العنوان",
+  "placeDeleted": "حُذف العنوان",
+  "contactSaved": "حُفظت جهة الاتصال",
+  "contactDeleted": "حُذفت جهة الاتصال"
 }

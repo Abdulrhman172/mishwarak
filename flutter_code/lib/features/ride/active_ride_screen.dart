@@ -2,6 +2,7 @@
 // active_ride_screen.dart - شاشة الرحلة الجارية (تتبّع السائق)
 // ═══════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -9,8 +10,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/utils/launchers.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/widgets/driver_avatar.dart';
+import '../../shared/widgets/emergency_sheet.dart';
 import '../../shared/widgets/map_view.dart';
 import '../../shared/widgets/star_rating.dart';
 import 'data/ride_repository.dart';
@@ -112,7 +115,7 @@ class ActiveRideScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(22),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -147,15 +150,31 @@ class ActiveRideScreen extends ConsumerWidget {
                       icon: Icons.share_outlined,
                       color: MishwarakColors.primary,
                       background: theme.cardColor,
-                      onTap: () => _snack(context, l10n.tripShared),
+                      onTap: () => _shareTrip(context, l10n, driver),
                     ),
                     const SizedBox(height: 8),
                     _RoundAction(
                       icon: Icons.shield_outlined,
                       color: Colors.white,
                       background: MishwarakColors.danger,
-                      onTap: () => _snack(context, l10n.emergencyNotified),
+                      // نمرّر موقع السائق: هو الموقع الحقيقي للراكب
+                      // أثناء الرحلة، وهو ما يجب أن تحمله رسالة النجدة.
+                      onTap: () => showEmergencySheet(
+                        context,
+                        lat: driver?.lat ?? ride?.pickupLat,
+                        lng: driver?.lng ?? ride?.pickupLng,
+                      ),
                     ),
+                    // الإلغاء متاح ما دامت الرحلة لم تبدأ.
+                    if (ride != null && ride.isArriving) ...[
+                      const SizedBox(height: 8),
+                      _RoundAction(
+                        icon: Icons.close_rounded,
+                        color: MishwarakColors.danger,
+                        background: theme.cardColor,
+                        onTap: () => _confirmCancel(context, ref, rideId),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -175,7 +194,7 @@ class ActiveRideScreen extends ConsumerWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
+                    color: Colors.black.withValues(alpha: 0.12),
                     blurRadius: 32,
                     offset: const Offset(0, -8),
                   ),
@@ -273,7 +292,7 @@ class ActiveRideScreen extends ConsumerWidget {
                                 icon: Icons.chat_bubble_outline_rounded,
                                 color: MishwarakColors.primary,
                                 background:
-                                    MishwarakColors.primary.withOpacity(0.12),
+                                    MishwarakColors.primary.withValues(alpha: 0.12),
                                 border: true,
                                 onTap: () =>
                                     _snack(context, l10n.chatComingSoon),
@@ -283,9 +302,11 @@ class ActiveRideScreen extends ConsumerWidget {
                                 icon: Icons.phone,
                                 color: Colors.white,
                                 background: MishwarakColors.primary,
-                                onTap: () => _snack(
+                                // اتصال فعلي؛ كان يعرض SnackBar فقط
+                                // رغم أن رقم السائق متاح في البيانات.
+                                onTap: () => Launchers.call(
                                   context,
-                                  l10n.callingDriver(driver.fullName),
+                                  driver.phone,
                                 ),
                               ),
                             ],
@@ -462,6 +483,70 @@ class ActiveRideScreen extends ConsumerWidget {
     );
   }
 
+  /// ينسخ تفاصيل الرحلة لمشاركتها مع شخص موثوق.
+  ///
+  /// النسخ للحافظة لا مشاركة نظامية: `share_plus` ليست ضمن اعتماديات
+  /// المشروع، والنسخ يعمل على كل المنصّات بما فيها الويب. المهم أن
+  /// يحصل المستخدم على النص فعلاً بدل رسالة "تمت المشاركة" الكاذبة.
+  static Future<void> _shareTrip(
+    BuildContext context,
+    L10n l10n,
+    RideDriver? driver,
+  ) async {
+    if (driver == null) return;
+
+    await Clipboard.setData(
+      ClipboardData(
+        text: l10n.shareTripText(
+          driver.fullName,
+          driver.carModel,
+          driver.plateNumber,
+        ),
+      ),
+    );
+    if (!context.mounted) return;
+    _snack(context, l10n.shareTripCopied);
+  }
+
+  /// يؤكّد إلغاء الرحلة ثم ينفّذه.
+  static Future<void> _confirmCancel(
+    BuildContext context,
+    WidgetRef ref,
+    String rideId,
+  ) async {
+    final l10n = L10n.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.cancelRide),
+        content: Text(l10n.cancelRideConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.keepRide),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: MishwarakColors.danger,
+              minimumSize: const Size(0, 44),
+            ),
+            child: Text(l10n.cancelRide),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(rideRepositoryProvider).cancelRide(rideId);
+      // لا ننتقل من هنا: مستمع `build` يتابع الحالة وينقل للرئيسية.
+    } catch (_) {
+      if (context.mounted) _snack(context, l10n.cancelRideFailed);
+    }
+  }
+
   static void _snack(BuildContext context, String msg) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -529,7 +614,7 @@ class _RoundAction extends StatelessWidget {
       shape: CircleBorder(
         side: border
             ? BorderSide(
-                color: MishwarakColors.primary.withOpacity(0.3),
+                color: MishwarakColors.primary.withValues(alpha: 0.3),
                 width: 1.5,
               )
             : BorderSide.none,

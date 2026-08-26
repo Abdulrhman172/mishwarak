@@ -34,7 +34,7 @@ class SavedPlaceCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isAdd ? MishwarakColors.primary.withOpacity(0.4) : theme.dividerColor,
+              color: isAdd ? MishwarakColors.primary.withValues(alpha: 0.4) : theme.dividerColor,
               width: 1.2,
             ),
           ),

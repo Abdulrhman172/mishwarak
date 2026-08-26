@@ -1,1 +1,3 @@
 #include "Generated.xcconfig"
+// اختياري: يُتجاهل بهدوء إن لم يوجد الملف (لاحظ "?").
+#include? "Secrets.xcconfig"

@@ -11,6 +11,13 @@ class WalletTransaction {
   final String description;
   final int amount;
   final bool isCredit;
+
+  /// الرحلة المرتبطة بالمعاملة، إن كانت أجرة رحلة.
+  ///
+  /// تُغني عن استنتاج نوع المعاملة من نصّ الوصف — وهو نصّ بلغة واحدة
+  /// وقابل للتغيير.
+  final String? rideId;
+
   final DateTime createdAt;
 
   const WalletTransaction({
@@ -18,6 +25,7 @@ class WalletTransaction {
     required this.description,
     required this.amount,
     required this.isCredit,
+    this.rideId,
     required this.createdAt,
   });
 }
@@ -59,6 +67,7 @@ class WalletRepository {
                 description: row['description'] as String? ?? '',
                 amount: (row['amount'] as num?)?.toInt() ?? 0,
                 isCredit: row['type'] == 'credit',
+                rideId: row['ride_id'] as String?,
                 createdAt: DateTime.parse(row['created_at'] as String),
               ))
           .toList();

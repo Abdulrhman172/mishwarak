@@ -23,6 +23,12 @@ import '../../features/wallet/wallet_screen.dart';
 import '../../features/history/history_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/notifications/notifications_screen.dart';
+import '../../l10n/app_localizations.dart';
+import '../../features/settings/settings_screen.dart';
+import '../../features/promos/promos_screen.dart';
+import '../../features/rewards/rewards_screen.dart';
+import '../../features/rewards/vip_screen.dart';
+import '../../features/help/help_screen.dart';
 
 /// أسماء المسارات (Type-safe)
 class AppRoutes {
@@ -40,6 +46,14 @@ class AppRoutes {
   static const history = '/history';
   static const profile = '/profile';
   static const notifications = '/notifications';
+  static const settings = '/settings';
+  static const promos = '/promos';
+  static const rewards = '/rewards';
+  static const vip = '/vip';
+  static const help = '/help';
+
+  /// المسارات الفرعية تُبنى تحت `/home` لتحتفظ بزر الرجوع إليها.
+  static String under(String child) => '$home$child';
 }
 
 /// المسارات المتاحة قبل تسجيل الدخول.
@@ -124,7 +138,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: 'search',
-            builder: (_, __) => const SearchScreen(),
+            builder: (_, state) => SearchScreen(
+              preferredCategory: state.uri.queryParameters['category'],
+            ),
           ),
           GoRoute(
             path: 'wallet',
@@ -142,19 +158,42 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: 'notifications',
             builder: (_, __) => const NotificationsScreen(),
           ),
+          GoRoute(
+            path: 'settings',
+            builder: (_, __) => const SettingsScreen(),
+          ),
+          GoRoute(
+            path: 'promos',
+            builder: (_, __) => const PromosScreen(),
+          ),
+          GoRoute(
+            path: 'rewards',
+            builder: (_, __) => const RewardsScreen(),
+          ),
+          GoRoute(
+            path: 'vip',
+            builder: (_, __) => const VipScreen(),
+          ),
+          GoRoute(
+            path: 'help',
+            builder: (_, __) => const HelpScreen(),
+          ),
         ],
       ),
       // الوجهة تُمرَّر كمعاملات استعلام لا عبر `extra`، حتى تبقى الحالة
       // بعد تحديث الصفحة على الويب.
       GoRoute(
         path: AppRoutes.vehicle,
-        builder: (_, state) {
+        builder: (context, state) {
           final q = state.uri.queryParameters;
           return VehicleSelectionScreen(
-            destName: q['name'] ?? 'الوجهة',
+            // اسم الوجهة يأتي دائماً من الشاشة السابقة؛ النص الاحتياطي
+            // مترجَم لأنه قد يظهر عند فتح الرابط مباشرة على الويب.
+            destName: q['name'] ?? L10n.of(context).chooseDestination,
             destAddress: q['addr'] ?? '',
             destLat: double.tryParse(q['lat'] ?? '') ?? 0,
             destLng: double.tryParse(q['lng'] ?? '') ?? 0,
+            preferredCategory: q['category'],
           );
         },
       ),

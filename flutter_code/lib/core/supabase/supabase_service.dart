@@ -41,7 +41,9 @@ class SupabaseService {
     try {
       await Supabase.initialize(
         url: AppConfig.supabaseUrl,
-        anonKey: AppConfig.supabaseAnonKey,
+        // `anonKey` مهجورة وستُحذف في إصدار رئيسي قادم. الاسم الجديد
+        // فقط هو ما تغيّر — المفتاح نفسه (anon / publishable) بلا تبديل.
+        publishableKey: AppConfig.supabaseAnonKey,
       );
       _initialized = true;
       debugPrint('[Supabase] متصل ✓');

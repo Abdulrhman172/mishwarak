@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mishwarak/core/theme/app_theme.dart';
 import 'package:mishwarak/features/booking/vehicle_selection_screen.dart';
 import 'package:mishwarak/features/history/history_screen.dart';
+import 'package:mishwarak/features/home/widgets/home_drawer.dart';
 import 'package:mishwarak/features/notifications/notifications_screen.dart';
 import 'package:mishwarak/features/onboarding/onboarding_screen.dart';
 import 'package:mishwarak/features/profile/profile_screen.dart';
@@ -147,5 +148,65 @@ void main() {
     expect(find.text('أمانك أولويتنا'), findsOneWidget);
     // آخر شريحة → يتغيّر نص الزر
     expect(find.text('يلا نبدأ'), findsOneWidget);
+  });
+
+  testWidgets('القائمة الجانبية تعرض كل عناصر التنقّل', (tester) async {
+    // الدرج يحتاج Scaffold يحتضنه، فنفتحه عبر مفتاح حالته.
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+    await pumpPhone(
+      tester,
+      Scaffold(key: scaffoldKey, drawer: const HomeDrawer(), body: const SizedBox()),
+    );
+
+    scaffoldKey.currentState!.openDrawer();
+    await tester.pumpAndSettle();
+
+    // بطاقة المستخدم: الاسم الافتراضي ورصيد المحفظة
+    expect(find.text('مستخدم مِشوارَك'), findsOneWidget);
+    expect(find.text('رصيد المحفظة'), findsOneWidget);
+
+    // العناصر العشرة كاملة
+    for (final label in [
+      'الملف الشخصي',
+      'رحلاتي',
+      'المحفظة',
+      'الإشعارات',
+      'الكوبونات',
+      'نظام النقاط',
+      'اشتراك VIP',
+      'جهات الطوارئ',
+      'الإعدادات',
+      'المساعدة',
+    ]) {
+      expect(find.text(label), findsOneWidget, reason: 'عنصر مفقود: $label');
+    }
+
+    expect(find.text('تسجيل الخروج'), findsOneWidget);
+  });
+
+  testWidgets('كل عنصر في القائمة الجانبية يقود إلى شاشة', (tester) async {
+    // كانت خمسة عناصر (الكوبونات، النقاط، VIP، الإعدادات، المساعدة)
+    // بلا مسار، فتعرض SnackBar "قيد الإنشاء" بدل شاشة. هذا الاختبار
+    // يمنع عودة أي منها إلى الطريق المسدود.
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+    await pumpPhone(
+      tester,
+      Scaffold(key: scaffoldKey, drawer: const HomeDrawer(), body: const SizedBox()),
+    );
+
+    scaffoldKey.currentState!.openDrawer();
+    await tester.pumpAndSettle();
+
+    for (final tile in tester.widgetList<InkWell>(
+      find.descendant(
+        of: find.byType(HomeDrawer),
+        matching: find.byType(InkWell),
+      ),
+    )) {
+      expect(tile.onTap, isNotNull);
+    }
+
+    // ولا يظهر نص "قيد الإنشاء" لأي عنصر.
+    expect(find.textContaining('قيد الإنشاء'), findsNothing);
   });
 }

@@ -486,4 +486,519 @@ class L10nAr extends L10n {
 
   @override
   String get locationFailed => 'تعذّر تحديد موقعك. حاول مرة أخرى.';
+
+  @override
+  String get menuWalletBalance => 'رصيد المحفظة';
+
+  @override
+  String get menuTopUp => 'شحن';
+
+  @override
+  String get menuPromos => 'الكوبونات';
+
+  @override
+  String get menuRewards => 'نظام النقاط';
+
+  @override
+  String get menuRewardsBadge => 'جديد';
+
+  @override
+  String get menuVip => 'اشتراك VIP';
+
+  @override
+  String get menuHelp => 'المساعدة';
+
+  @override
+  String get signOut => 'تسجيل الخروج';
+
+  @override
+  String get signOutConfirm => 'هل تريد تسجيل الخروج من حسابك؟';
+
+  @override
+  String comingSoon(String feature) {
+    return '$feature قيد الإنشاء';
+  }
+
+  @override
+  String get save => 'حفظ';
+
+  @override
+  String get edit => 'تعديل';
+
+  @override
+  String get delete => 'حذف';
+
+  @override
+  String get remove => 'إزالة';
+
+  @override
+  String get close => 'إغلاق';
+
+  @override
+  String get apply => 'تطبيق';
+
+  @override
+  String get retry => 'إعادة المحاولة';
+
+  @override
+  String get fieldRequired => 'هذا الحقل مطلوب';
+
+  @override
+  String get saved => 'تم الحفظ';
+
+  @override
+  String get saveFailed => 'تعذّر الحفظ. حاول مرة أخرى.';
+
+  @override
+  String get deleteFailed => 'تعذّر الحذف. حاول مرة أخرى.';
+
+  @override
+  String get signInRequired => 'سجّل الدخول أولاً.';
+
+  @override
+  String get dateToday => 'اليوم';
+
+  @override
+  String get dateYesterday => 'أمس';
+
+  @override
+  String get relativeNow => 'الآن';
+
+  @override
+  String relativeMinutes(int count) {
+    return 'قبل $count دقيقة';
+  }
+
+  @override
+  String relativeHours(int count) {
+    return 'قبل $count ساعة';
+  }
+
+  @override
+  String relativeDays(int count) {
+    return 'قبل $count يوم';
+  }
+
+  @override
+  String get settingsTitle => 'الإعدادات';
+
+  @override
+  String get settingsLanguage => 'اللغة';
+
+  @override
+  String get settingsLanguageArabic => 'العربية';
+
+  @override
+  String get settingsLanguageEnglish => 'English';
+
+  @override
+  String get settingsAppearance => 'المظهر';
+
+  @override
+  String get settingsThemeSystem => 'حسب النظام';
+
+  @override
+  String get settingsThemeLight => 'فاتح';
+
+  @override
+  String get settingsThemeDark => 'داكن';
+
+  @override
+  String get settingsAbout => 'عن التطبيق';
+
+  @override
+  String get settingsVersion => 'الإصدار';
+
+  @override
+  String get settingsDiagnostics => 'حالة الخدمات';
+
+  @override
+  String get settingsBackendOn => 'قاعدة البيانات: متصلة';
+
+  @override
+  String get settingsBackendOff => 'قاعدة البيانات: غير مهيّأة';
+
+  @override
+  String get settingsMapsOn => 'الخرائط: مفعّلة';
+
+  @override
+  String get settingsMapsOff => 'الخرائط: بديلة';
+
+  @override
+  String get settingsTerms => 'شروط الاستخدام';
+
+  @override
+  String get settingsPrivacy => 'سياسة الخصوصية';
+
+  @override
+  String get editProfile => 'تعديل الملف الشخصي';
+
+  @override
+  String get fullNameLabel => 'الاسم الكامل';
+
+  @override
+  String get emailLabel => 'البريد الإلكتروني';
+
+  @override
+  String get emailInvalid => 'بريد إلكتروني غير صالح';
+
+  @override
+  String get phoneNotEditable =>
+      'رقم الجوال هو وسيلة الدخول ولا يمكن تغييره هنا.';
+
+  @override
+  String get addPlaceTitle => 'عنوان جديد';
+
+  @override
+  String get editPlaceTitle => 'تعديل العنوان';
+
+  @override
+  String get placeNameLabel => 'اسم المكان';
+
+  @override
+  String get placeAddressLabel => 'العنوان';
+
+  @override
+  String get placeKindHome => 'المنزل';
+
+  @override
+  String get placeKindWork => 'العمل';
+
+  @override
+  String get placeKindOther => 'آخر';
+
+  @override
+  String deletePlaceConfirm(String name) {
+    return 'حذف \"$name\" من عناوينك المحفوظة؟';
+  }
+
+  @override
+  String get addContactTitle => 'جهة اتصال للطوارئ';
+
+  @override
+  String get editContactTitle => 'تعديل جهة الاتصال';
+
+  @override
+  String get contactNameLabel => 'الاسم';
+
+  @override
+  String get contactPhoneLabel => 'رقم الجوال';
+
+  @override
+  String get phoneInvalid => 'رقم جوال غير صالح';
+
+  @override
+  String deleteContactConfirm(String name) {
+    return 'حذف \"$name\" من جهات الطوارئ؟';
+  }
+
+  @override
+  String get promosTitle => 'الكوبونات والعروض';
+
+  @override
+  String get promoCodeLabel => 'رمز الكوبون';
+
+  @override
+  String promoApplied(String amount, String currency) {
+    return 'طُبِّق الكوبون — خصم $amount $currency';
+  }
+
+  @override
+  String get promoNotFound => 'رمز الكوبون غير موجود.';
+
+  @override
+  String get promoExpired => 'انتهت صلاحية هذا الكوبون.';
+
+  @override
+  String get promoNotStarted => 'هذا الكوبون لم يبدأ بعد.';
+
+  @override
+  String get promoExhausted => 'استُنفد هذا الكوبون.';
+
+  @override
+  String get promoAlreadyUsed => 'استخدمت هذا الكوبون من قبل.';
+
+  @override
+  String get promoRideClosed => 'لا يمكن تطبيق كوبون على رحلة منتهية.';
+
+  @override
+  String get promoFailed => 'تعذّر التحقّق من الكوبون. حاول مرة أخرى.';
+
+  @override
+  String get promoNone => 'لا توجد عروض متاحة حالياً.';
+
+  @override
+  String promoValidUntil(String date) {
+    return 'صالح حتى $date';
+  }
+
+  @override
+  String promoOffPercent(int percent) {
+    return 'خصم $percent%';
+  }
+
+  @override
+  String promoOffAmount(String amount, String currency) {
+    return 'خصم $amount $currency';
+  }
+
+  @override
+  String get promoCopy => 'نسخ الرمز';
+
+  @override
+  String promoCopied(String code) {
+    return 'نُسخ الرمز $code';
+  }
+
+  @override
+  String get promoRemoved => 'أُزيل الكوبون';
+
+  @override
+  String get discount => 'الخصم';
+
+  @override
+  String get totalAfterDiscount => 'الإجمالي بعد الخصم';
+
+  @override
+  String get rewardsTitle => 'نظام النقاط';
+
+  @override
+  String get rewardsIntro => 'تكسب نقطة عن كل 100 ريال تدفعها في رحلاتك.';
+
+  @override
+  String get rewardsBalance => 'رصيدك الحالي';
+
+  @override
+  String get rewardsTierSilver => 'فضّي';
+
+  @override
+  String get rewardsTierGold => 'ذهبي';
+
+  @override
+  String get rewardsTierPlatinum => 'بلاتيني';
+
+  @override
+  String rewardsTierAt(String points) {
+    return 'عند $points نقطة';
+  }
+
+  @override
+  String get rewardsPerkFreeRide => 'رحلة مجانية كل 5000 نقطة';
+
+  @override
+  String get rewardsPerkPriority => 'أولوية في إيجاد السائق';
+
+  @override
+  String get rewardsPerkSupport => 'دعم مخصّص على مدار الساعة';
+
+  @override
+  String rewardsCurrentTier(String tier) {
+    return 'مستواك الحالي: $tier';
+  }
+
+  @override
+  String get vipTitle => 'اشتراك VIP';
+
+  @override
+  String get vipIntro => 'مزايا إضافية لركّاب مِشوارَك الدائمين.';
+
+  @override
+  String get vipPerkDiscount => 'خصم دائم 10% على كل رحلة';
+
+  @override
+  String get vipPerkCars => 'سيارات الفئة المريحة بسعر الاقتصادي';
+
+  @override
+  String get vipPerkCancel => 'إلغاء مجاني بلا رسوم';
+
+  @override
+  String get vipNotAvailable =>
+      'الاشتراك غير متاح في منطقتك بعد. سنُعلمك فور إطلاقه.';
+
+  @override
+  String get notifyMe => 'أعلمني عند الإطلاق';
+
+  @override
+  String get notifyMeDone => 'سنُعلمك فور توفّر الميزة.';
+
+  @override
+  String get helpTitle => 'المساعدة';
+
+  @override
+  String get helpFaqTitle => 'أسئلة شائعة';
+
+  @override
+  String get helpContactTitle => 'تواصل معنا';
+
+  @override
+  String get helpCall => 'اتصال بالدعم';
+
+  @override
+  String get helpWhatsapp => 'واتساب';
+
+  @override
+  String get helpEmail => 'البريد الإلكتروني';
+
+  @override
+  String get helpQ1 => 'كيف أطلب رحلة؟';
+
+  @override
+  String get helpA1 =>
+      'من الشاشة الرئيسية اختر وجهتك، ثم نوع المركبة، ثم اضغط زر الطلب. سيُعيَّن أقرب سائق متاح تلقائياً.';
+
+  @override
+  String get helpQ2 => 'كيف أدفع؟';
+
+  @override
+  String get helpA2 =>
+      'يمكنك الدفع من رصيد المحفظة أو نقداً للسائق عند نهاية الرحلة. تختار الطريقة قبل تأكيد الطلب.';
+
+  @override
+  String get helpQ3 => 'كيف ألغي رحلة؟';
+
+  @override
+  String get helpA3 =>
+      'اضغط \"إلغاء الطلب\" أثناء البحث عن سائق، أو زر الإلغاء في شاشة الرحلة قبل بدايتها.';
+
+  @override
+  String get helpQ4 => 'ماذا يفعل زر الطوارئ؟';
+
+  @override
+  String get helpA4 =>
+      'يفتح اتصالاً مباشراً بالطوارئ، أو يرسل رسالة بموقعك الحالي إلى جهات الطوارئ التي أضفتها في ملفك الشخصي.';
+
+  @override
+  String get helpQ5 => 'كيف أستخدم كوبون خصم؟';
+
+  @override
+  String get helpA5 =>
+      'من شاشة اختيار المركبة اضغط \"كوبون\" وأدخل الرمز قبل تأكيد الطلب.';
+
+  @override
+  String emergencyCallPolice(String number) {
+    return 'اتصال بالطوارئ ($number)';
+  }
+
+  @override
+  String get emergencyNotifyContacts => 'إرسال موقعي لجهات الطوارئ';
+
+  @override
+  String get emergencyNoContacts => 'لم تُضف جهات طوارئ بعد.';
+
+  @override
+  String get emergencyAddContact => 'إضافة جهة اتصال';
+
+  @override
+  String emergencySmsBody(String url) {
+    return 'أحتاج مساعدة. موقعي الحالي: $url';
+  }
+
+  @override
+  String get emergencySmsNoLocation => 'أحتاج مساعدة. لم يتوفّر موقعي الحالي.';
+
+  @override
+  String get emergencyOpenFailed => 'تعذّر فتح تطبيق الاتصال على هذا الجهاز.';
+
+  @override
+  String get callDriverFailed => 'تعذّر بدء الاتصال بالسائق.';
+
+  @override
+  String shareTripText(String driver, String car, String plate) {
+    return 'أنا في رحلة مع $driver · سيارة $car · لوحة $plate';
+  }
+
+  @override
+  String get shareTripCopied => 'نُسخت تفاصيل الرحلة — أرسلها لمن تثق به.';
+
+  @override
+  String get cancelRide => 'إلغاء الرحلة';
+
+  @override
+  String get cancelRideConfirm =>
+      'إلغاء هذه الرحلة؟ قد تُطبَّق رسوم إلغاء إذا كان السائق في طريقه إليك.';
+
+  @override
+  String get cancelRideFailed => 'تعذّر إلغاء الرحلة. حاول مرة أخرى.';
+
+  @override
+  String get keepRide => 'متابعة الرحلة';
+
+  @override
+  String vehicleEta(int minutes) {
+    return '$minutes دقائق';
+  }
+
+  @override
+  String get rateThisTrip => 'قيّم هذه الرحلة';
+
+  @override
+  String get tripRated => 'مُقيَّمة';
+
+  @override
+  String get noPaymentMethods => 'لم تُضف طريقة دفع بعد.';
+
+  @override
+  String get paymentSetDefault => 'جعله الافتراضي';
+
+  @override
+  String get paymentRemove => 'إزالة البطاقة';
+
+  @override
+  String get paymentRemoveConfirm => 'إزالة هذه البطاقة من حسابك؟';
+
+  @override
+  String get paymentDefaultSet => 'أصبحت الطريقة الافتراضية';
+
+  @override
+  String get searchingPlaces => 'جارٍ البحث...';
+
+  @override
+  String get searchNoResults => 'لا توجد نتائج لهذا البحث.';
+
+  @override
+  String get searchFailed => 'تعذّر البحث عن العنوان.';
+
+  @override
+  String get searchOnWebUnsupported =>
+      'البحث الجغرافي غير متاح على المتصفّح — اختر من العناوين المحفوظة أو الأخيرة.';
+
+  @override
+  String get destinationNeedsLocation =>
+      'لم نتمكن من تحديد إحداثيات هذه الوجهة، لذا الأجرة تقديرية.';
+
+  @override
+  String get notifRideCompleted => 'اكتملت رحلتك';
+
+  @override
+  String get notifPromo => 'عرض جديد';
+
+  @override
+  String get notifPoints => 'نقاط جديدة';
+
+  @override
+  String get notifRating => 'قيّم رحلتك';
+
+  @override
+  String notifRoute(String from, String to) {
+    return '$from ← $to';
+  }
+
+  @override
+  String get serviceSchedulePrompt =>
+      'الحجز المسبق قادم قريباً — يمكنك الطلب الآن مباشرة.';
+
+  @override
+  String get profileUpdated => 'حُدِّث ملفك الشخصي';
+
+  @override
+  String get placeSaved => 'حُفظ العنوان';
+
+  @override
+  String get placeDeleted => 'حُذف العنوان';
+
+  @override
+  String get contactSaved => 'حُفظت جهة الاتصال';
+
+  @override
+  String get contactDeleted => 'حُذفت جهة الاتصال';
 }

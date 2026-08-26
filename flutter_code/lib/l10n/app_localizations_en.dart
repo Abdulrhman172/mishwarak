@@ -489,4 +489,526 @@ class L10nEn extends L10n {
   @override
   String get locationFailed =>
       'Couldn\'t determine your location. Please try again.';
+
+  @override
+  String get menuWalletBalance => 'Wallet balance';
+
+  @override
+  String get menuTopUp => 'Top up';
+
+  @override
+  String get menuPromos => 'Promos';
+
+  @override
+  String get menuRewards => 'Rewards';
+
+  @override
+  String get menuRewardsBadge => 'New';
+
+  @override
+  String get menuVip => 'VIP subscription';
+
+  @override
+  String get menuHelp => 'Help';
+
+  @override
+  String get signOut => 'Sign out';
+
+  @override
+  String get signOutConfirm => 'Do you want to sign out of your account?';
+
+  @override
+  String comingSoon(String feature) {
+    return '$feature is coming soon';
+  }
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get remove => 'Remove';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get apply => 'Apply';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get fieldRequired => 'This field is required';
+
+  @override
+  String get saved => 'Saved';
+
+  @override
+  String get saveFailed => 'Couldn\'t save. Please try again.';
+
+  @override
+  String get deleteFailed => 'Couldn\'t delete. Please try again.';
+
+  @override
+  String get signInRequired => 'Please sign in first.';
+
+  @override
+  String get dateToday => 'Today';
+
+  @override
+  String get dateYesterday => 'Yesterday';
+
+  @override
+  String get relativeNow => 'Just now';
+
+  @override
+  String relativeMinutes(int count) {
+    return '$count min ago';
+  }
+
+  @override
+  String relativeHours(int count) {
+    return '$count h ago';
+  }
+
+  @override
+  String relativeDays(int count) {
+    return '$count d ago';
+  }
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsLanguageArabic => 'العربية';
+
+  @override
+  String get settingsLanguageEnglish => 'English';
+
+  @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get settingsThemeSystem => 'System';
+
+  @override
+  String get settingsThemeLight => 'Light';
+
+  @override
+  String get settingsThemeDark => 'Dark';
+
+  @override
+  String get settingsAbout => 'About';
+
+  @override
+  String get settingsVersion => 'Version';
+
+  @override
+  String get settingsDiagnostics => 'Service status';
+
+  @override
+  String get settingsBackendOn => 'Database: connected';
+
+  @override
+  String get settingsBackendOff => 'Database: not configured';
+
+  @override
+  String get settingsMapsOn => 'Maps: enabled';
+
+  @override
+  String get settingsMapsOff => 'Maps: fallback';
+
+  @override
+  String get settingsTerms => 'Terms of use';
+
+  @override
+  String get settingsPrivacy => 'Privacy policy';
+
+  @override
+  String get editProfile => 'Edit profile';
+
+  @override
+  String get fullNameLabel => 'Full name';
+
+  @override
+  String get emailLabel => 'Email address';
+
+  @override
+  String get emailInvalid => 'Invalid email address';
+
+  @override
+  String get phoneNotEditable =>
+      'Your phone number is your sign-in method and can\'t be changed here.';
+
+  @override
+  String get addPlaceTitle => 'New address';
+
+  @override
+  String get editPlaceTitle => 'Edit address';
+
+  @override
+  String get placeNameLabel => 'Place name';
+
+  @override
+  String get placeAddressLabel => 'Address';
+
+  @override
+  String get placeKindHome => 'Home';
+
+  @override
+  String get placeKindWork => 'Work';
+
+  @override
+  String get placeKindOther => 'Other';
+
+  @override
+  String deletePlaceConfirm(String name) {
+    return 'Remove \"$name\" from your saved addresses?';
+  }
+
+  @override
+  String get addContactTitle => 'Emergency contact';
+
+  @override
+  String get editContactTitle => 'Edit contact';
+
+  @override
+  String get contactNameLabel => 'Name';
+
+  @override
+  String get contactPhoneLabel => 'Phone number';
+
+  @override
+  String get phoneInvalid => 'Invalid phone number';
+
+  @override
+  String deleteContactConfirm(String name) {
+    return 'Remove \"$name\" from your emergency contacts?';
+  }
+
+  @override
+  String get promosTitle => 'Coupons & offers';
+
+  @override
+  String get promoCodeLabel => 'Coupon code';
+
+  @override
+  String promoApplied(String amount, String currency) {
+    return 'Coupon applied — $amount $currency off';
+  }
+
+  @override
+  String get promoNotFound => 'That coupon code doesn\'t exist.';
+
+  @override
+  String get promoExpired => 'This coupon has expired.';
+
+  @override
+  String get promoNotStarted => 'This coupon isn\'t active yet.';
+
+  @override
+  String get promoExhausted => 'This coupon has been fully redeemed.';
+
+  @override
+  String get promoAlreadyUsed => 'You\'ve already used this coupon.';
+
+  @override
+  String get promoRideClosed =>
+      'A coupon can\'t be applied to a finished ride.';
+
+  @override
+  String get promoFailed => 'Couldn\'t check the coupon. Please try again.';
+
+  @override
+  String get promoNone => 'No offers available right now.';
+
+  @override
+  String promoValidUntil(String date) {
+    return 'Valid until $date';
+  }
+
+  @override
+  String promoOffPercent(int percent) {
+    return '$percent% off';
+  }
+
+  @override
+  String promoOffAmount(String amount, String currency) {
+    return '$amount $currency off';
+  }
+
+  @override
+  String get promoCopy => 'Copy code';
+
+  @override
+  String promoCopied(String code) {
+    return 'Copied $code';
+  }
+
+  @override
+  String get promoRemoved => 'Coupon removed';
+
+  @override
+  String get discount => 'Discount';
+
+  @override
+  String get totalAfterDiscount => 'Total after discount';
+
+  @override
+  String get rewardsTitle => 'Points';
+
+  @override
+  String get rewardsIntro =>
+      'Earn 1 point for every 100 YER you spend on rides.';
+
+  @override
+  String get rewardsBalance => 'Your balance';
+
+  @override
+  String get rewardsTierSilver => 'Silver';
+
+  @override
+  String get rewardsTierGold => 'Gold';
+
+  @override
+  String get rewardsTierPlatinum => 'Platinum';
+
+  @override
+  String rewardsTierAt(String points) {
+    return 'at $points points';
+  }
+
+  @override
+  String get rewardsPerkFreeRide => 'A free ride every 5,000 points';
+
+  @override
+  String get rewardsPerkPriority => 'Priority driver matching';
+
+  @override
+  String get rewardsPerkSupport => 'Dedicated 24/7 support';
+
+  @override
+  String rewardsCurrentTier(String tier) {
+    return 'Your tier: $tier';
+  }
+
+  @override
+  String get vipTitle => 'VIP membership';
+
+  @override
+  String get vipIntro => 'Extra benefits for regular Mishwarak riders.';
+
+  @override
+  String get vipPerkDiscount => 'A standing 10% off every ride';
+
+  @override
+  String get vipPerkCars => 'Comfort-class cars at economy prices';
+
+  @override
+  String get vipPerkCancel => 'Free cancellation, no fees';
+
+  @override
+  String get vipNotAvailable =>
+      'Membership isn\'t available in your area yet. We\'ll let you know when it launches.';
+
+  @override
+  String get notifyMe => 'Notify me at launch';
+
+  @override
+  String get notifyMeDone => 'We\'ll let you know as soon as it\'s available.';
+
+  @override
+  String get helpTitle => 'Help';
+
+  @override
+  String get helpFaqTitle => 'Frequently asked';
+
+  @override
+  String get helpContactTitle => 'Contact us';
+
+  @override
+  String get helpCall => 'Call support';
+
+  @override
+  String get helpWhatsapp => 'WhatsApp';
+
+  @override
+  String get helpEmail => 'Email';
+
+  @override
+  String get helpQ1 => 'How do I book a ride?';
+
+  @override
+  String get helpA1 =>
+      'From the home screen pick your destination, choose a vehicle type, then tap the order button. The nearest available driver is assigned automatically.';
+
+  @override
+  String get helpQ2 => 'How do I pay?';
+
+  @override
+  String get helpA2 =>
+      'Pay from your wallet balance, or in cash to the driver at the end of the ride. You choose before confirming the order.';
+
+  @override
+  String get helpQ3 => 'How do I cancel a ride?';
+
+  @override
+  String get helpA3 =>
+      'Tap \"Cancel request\" while a driver is being found, or the cancel button on the ride screen before it starts.';
+
+  @override
+  String get helpQ4 => 'What does the emergency button do?';
+
+  @override
+  String get helpA4 =>
+      'It places a direct call to emergency services, or sends your current location to the emergency contacts saved in your profile.';
+
+  @override
+  String get helpQ5 => 'How do I use a coupon?';
+
+  @override
+  String get helpA5 =>
+      'On the vehicle selection screen tap \"Coupon\" and enter your code before confirming the order.';
+
+  @override
+  String emergencyCallPolice(String number) {
+    return 'Call emergency ($number)';
+  }
+
+  @override
+  String get emergencyNotifyContacts =>
+      'Send my location to emergency contacts';
+
+  @override
+  String get emergencyNoContacts =>
+      'You haven\'t added any emergency contacts yet.';
+
+  @override
+  String get emergencyAddContact => 'Add a contact';
+
+  @override
+  String emergencySmsBody(String url) {
+    return 'I need help. My current location: $url';
+  }
+
+  @override
+  String get emergencySmsNoLocation =>
+      'I need help. My location isn\'t available.';
+
+  @override
+  String get emergencyOpenFailed =>
+      'Couldn\'t open the phone app on this device.';
+
+  @override
+  String get callDriverFailed => 'Couldn\'t start the call to the driver.';
+
+  @override
+  String shareTripText(String driver, String car, String plate) {
+    return 'I\'m on a ride with $driver · $car · plate $plate';
+  }
+
+  @override
+  String get shareTripCopied =>
+      'Ride details copied — send them to someone you trust.';
+
+  @override
+  String get cancelRide => 'Cancel ride';
+
+  @override
+  String get cancelRideConfirm =>
+      'Cancel this ride? A cancellation fee may apply if the driver is already on the way.';
+
+  @override
+  String get cancelRideFailed => 'Couldn\'t cancel the ride. Please try again.';
+
+  @override
+  String get keepRide => 'Keep the ride';
+
+  @override
+  String vehicleEta(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get rateThisTrip => 'Rate this trip';
+
+  @override
+  String get tripRated => 'Rated';
+
+  @override
+  String get noPaymentMethods => 'No payment method added yet.';
+
+  @override
+  String get paymentSetDefault => 'Make default';
+
+  @override
+  String get paymentRemove => 'Remove card';
+
+  @override
+  String get paymentRemoveConfirm => 'Remove this card from your account?';
+
+  @override
+  String get paymentDefaultSet => 'Set as default';
+
+  @override
+  String get searchingPlaces => 'Searching...';
+
+  @override
+  String get searchNoResults => 'No results for that search.';
+
+  @override
+  String get searchFailed => 'Couldn\'t look up that address.';
+
+  @override
+  String get searchOnWebUnsupported =>
+      'Address search isn\'t available in the browser — pick a saved or recent address.';
+
+  @override
+  String get destinationNeedsLocation =>
+      'We couldn\'t pin coordinates for this destination, so the fare is an estimate.';
+
+  @override
+  String get notifRideCompleted => 'Your ride is complete';
+
+  @override
+  String get notifPromo => 'New offer';
+
+  @override
+  String get notifPoints => 'Points earned';
+
+  @override
+  String get notifRating => 'Rate your ride';
+
+  @override
+  String notifRoute(String from, String to) {
+    return '$from → $to';
+  }
+
+  @override
+  String get serviceSchedulePrompt =>
+      'Scheduled rides are coming soon — you can book right now instead.';
+
+  @override
+  String get profileUpdated => 'Profile updated';
+
+  @override
+  String get placeSaved => 'Address saved';
+
+  @override
+  String get placeDeleted => 'Address deleted';
+
+  @override
+  String get contactSaved => 'Contact saved';
+
+  @override
+  String get contactDeleted => 'Contact deleted';
 }

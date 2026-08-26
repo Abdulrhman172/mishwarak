@@ -1,18 +1,25 @@
 // ═══════════════════════════════════════════════════════════════
-// search_screen.dart - اختيار الوجهة (العناوين المحفوظة + الأخيرة)
+// search_screen.dart - اختيار الوجهة (بحث + محفوظة + أخيرة)
 // ═══════════════════════════════════════════════════════════════
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/location/location_provider.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../profile/data/profile_repository.dart';
 import '../ride/data/ride_repository.dart';
+import 'data/geocoding_service.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
-  const SearchScreen({super.key});
+  /// فئة مركبة مُفضّلة قادمة من اختصارات الشاشة الرئيسية.
+  final String? preferredCategory;
+
+  const SearchScreen({super.key, this.preferredCategory});
 
   @override
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
@@ -21,16 +28,60 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _query = TextEditingController();
 
+  /// يؤخّر البحث حتى يتوقّف المستخدم عن الكتابة.
+  ///
+  /// بدونه يُطلق كل حرف عملية geocoding — وهي استدعاء لخدمة النظام
+  /// لا حساب محلي، فتتزاحم النتائج ويصل أبطأها أخيراً فيظهر خطأً.
+  Timer? _debounce;
+  int _searchToken = 0;
+
+  List<PlaceResult> _results = const [];
+  bool _searching = false;
+
   @override
   void initState() {
     super.initState();
-    _query.addListener(() => setState(() {}));
+    _query.addListener(_onQueryChanged);
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _query.removeListener(_onQueryChanged);
     _query.dispose();
     super.dispose();
+  }
+
+  void _onQueryChanged() {
+    setState(() {});
+    _debounce?.cancel();
+
+    final text = _query.text.trim();
+    if (text.length < 3 || !GeocodingService.isSupported) {
+      if (_results.isNotEmpty) setState(() => _results = const []);
+      return;
+    }
+
+    _debounce = Timer(const Duration(milliseconds: 450), () => _search(text));
+  }
+
+  Future<void> _search(String text) async {
+    // رمز لكل بحث: نتجاهل نتيجة بحث سبقه بحث أحدث.
+    final token = ++_searchToken;
+    setState(() => _searching = true);
+
+    final near = ref.read(locationProvider).valueOrNull;
+    final results = await ref.read(geocodingServiceProvider).search(
+          text,
+          nearLat: near?.lat,
+          nearLng: near?.lng,
+        );
+
+    if (!mounted || token != _searchToken) return;
+    setState(() {
+      _results = results;
+      _searching = false;
+    });
   }
 
   /// ينتقل لاختيار المركبة حاملاً الوجهة في المسار.
@@ -47,6 +98,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         'addr': address,
         'lat': '$lat',
         'lng': '$lng',
+        if (widget.preferredCategory != null)
+          'category': widget.preferredCategory!,
       },
     );
     context.push(uri.toString());
@@ -73,13 +126,54 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             decoration: InputDecoration(
               hintText: l10n.destinationHint,
               prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searching
+                  ? const Padding(
+                      padding: EdgeInsets.all(14),
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : typed.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.clear_rounded),
+                          onPressed: _query.clear,
+                        ),
             ),
             onSubmitted: (_) => _submitTyped(),
           ),
 
-          // بلا خدمة بحث جغرافي بعد: نسمح باستخدام النص كوجهة مبدئية
-          // حتى لا يتوقف المستخدم عند وجهة غير محفوظة.
-          if (typed.isNotEmpty) ...[
+          // ═══ نتائج البحث الجغرافي ═══
+          if (_results.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            for (final place in _results)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const CircleAvatar(
+                  backgroundColor: MishwarakColors.primary,
+                  child: Icon(Icons.place, color: Colors.white, size: 18),
+                ),
+                title: Text(place.name),
+                subtitle: Text(
+                  place.address,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () => _pick(
+                  name: place.name,
+                  address: place.address,
+                  lat: place.lat,
+                  lng: place.lng,
+                ),
+              ),
+          ]
+          // ═══ استخدام النص كما هو ═══
+          // متاح حين لا يدعم النظام البحث الجغرافي (الويب) أو حين لا
+          // يجد نتيجة — لكن الأجرة حينها تقديرية، ونقول ذلك صراحةً
+          // بدل تمرير إحداثيات (0,0) بصمت.
+          else if (typed.isNotEmpty && !_searching) ...[
             const SizedBox(height: 10),
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -88,9 +182,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 child: Icon(Icons.place, color: Colors.white, size: 18),
               ),
               title: Text(typed),
-              subtitle: Text(l10n.useAsDestination),
+              subtitle: Text(
+                GeocodingService.isSupported
+                    ? l10n.useAsDestination
+                    : l10n.searchOnWebUnsupported,
+              ),
+              isThreeLine: !GeocodingService.isSupported,
               onTap: _submitTyped,
             ),
+            if (typed.length >= 3 && GeocodingService.isSupported)
+              _Hint(l10n.searchNoResults),
           ],
 
           // ═══ العناوين المحفوظة ═══
@@ -153,13 +254,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       title: Text(r.toAddress),
                       subtitle: Text(r.fromAddress),
                       trailing: const Icon(Icons.arrow_back, size: 18),
-                      // السجل لا يحفظ إحداثيات الوجهة، فنمرّر العنوان فقط.
-                      onTap: () => _pick(
-                        name: r.toAddress,
-                        address: r.toAddress,
-                        lat: 0,
-                        lng: 0,
-                      ),
+                      // ملخّص السجل لا يحمل إحداثيات، فنبحث عن العنوان
+                      // من جديد بدل تمرير أصفار.
+                      onTap: () => _resolveThenPick(r.toAddress),
                     ),
                 ],
               );
@@ -175,7 +272,56 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _submitTyped() {
     final typed = _query.text.trim();
     if (typed.isEmpty) return;
-    _pick(name: typed, address: typed, lat: 0, lng: 0);
+
+    // إن كانت هناك نتيجة جغرافية جاهزة فهي الأدقّ.
+    if (_results.isNotEmpty) {
+      final best = _results.first;
+      _pick(
+        name: typed,
+        address: best.address,
+        lat: best.lat,
+        lng: best.lng,
+      );
+      return;
+    }
+
+    _resolveThenPick(typed);
+  }
+
+  /// يحاول إيجاد إحداثيات العنوان قبل الانتقال.
+  ///
+  /// عند الفشل ننتقل بإحداثيات صفرية مع تنبيه أن الأجرة تقديرية —
+  /// أفضل من منع الراكب من الطلب، وأصدق من إخفاء الأمر.
+  Future<void> _resolveThenPick(String address) async {
+    final l10n = L10n.of(context);
+    final near = ref.read(locationProvider).valueOrNull;
+
+    setState(() => _searching = true);
+    final found = await ref.read(geocodingServiceProvider).search(
+          address,
+          nearLat: near?.lat,
+          nearLng: near?.lng,
+          limit: 1,
+        );
+    if (!mounted) return;
+    setState(() => _searching = false);
+
+    if (found.isEmpty) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(l10n.destinationNeedsLocation)),
+        );
+      _pick(name: address, address: address, lat: 0, lng: 0);
+      return;
+    }
+
+    _pick(
+      name: address,
+      address: found.first.address,
+      lat: found.first.lat,
+      lng: found.first.lng,
+    );
   }
 }
 

@@ -52,32 +52,30 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
       if (mounted) setState(() => _tookTooLong = true);
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => _matchDriver());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAssignment());
   }
 
-  /// يبحث عن أقرب سائق ويُعيّنه.
+  /// يفحص ما إذا كانت القاعدة قد عيّنت سائقاً بالفعل.
   ///
-  /// التعيين يحدّث الرحلة في القاعدة، فيصل التغيير عبر Realtime إلى
-  /// المستمع في `build` الذي ينقلنا لشاشة الرحلة — لا ننتقل من هنا
-  /// حتى يبقى مسار الانتقال واحداً.
-  Future<void> _matchDriver() async {
+  /// التعيين يحدث في مُشغِّل `assign_nearest_driver` لحظة إنشاء الرحلة،
+  /// فغالباً يصل السائق قبل ظهور هذه الشاشة. نقرأ الرحلة مرة واحدة
+  /// لأن اشتراك Realtime لا يُرسل الحالة الراهنة، بل التغييرات بعده —
+  /// وبدون هذه القراءة تبقى الشاشة تدور على رحلة معيَّنة أصلاً.
+  ///
+  /// الانتقال نفسه يتم من مستمع `build` وحده ليبقى المسار واحداً.
+  Future<void> _checkAssignment() async {
     final ride = await ref.read(rideRepositoryProvider).fetchRide(widget.rideId);
     if (ride == null || !mounted) return;
 
-    // رحلة أُلغيت أو عُيّن لها سائق مسبقاً (عودة للشاشة) — لا نطابق ثانية.
-    if (ride.driverId != null || ride.isCancelled) return;
+    if (ride.driverId != null && !ride.isCancelled) {
+      context.pushReplacement('${AppRoutes.active}?ride=${widget.rideId}');
+      return;
+    }
 
-    final driver = await ref.read(rideRepositoryProvider).matchDriver(
-          rideId: widget.rideId,
-          vehicleTypeId: ride.vehicleTypeId ?? '',
-          pickupLat: ride.pickupLat,
-          pickupLng: ride.pickupLng,
-        );
-
-    // لا سائق متاح → نُظهر رسالة "تعذّر" فوراً بدل انتظار المهلة كاملة.
-    if (driver == null && mounted) {
-      _noDriverTimer?.cancel();
-      setState(() => _tookTooLong = true);
+    // بقيت `requested` رغم مرور المُشغِّل: لا سائق متاح لهذا النوع.
+    // نُظهر رسالة "تعذّر" فوراً بدل انتظار المهلة كاملة.
+    if (ride.isCancelled && mounted) {
+      context.go(AppRoutes.home);
     }
   }
 
@@ -91,12 +89,22 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
 
   Future<void> _cancel() async {
     setState(() => _isCancelling = true);
+
     try {
       await ref
           .read(rideRepositoryProvider)
-          .cancelRide(widget.rideId, reason: 'ألغاها الراكب');
-    } finally {
+          .cancelRide(widget.rideId, reasonCode: 'passenger');
       if (mounted) context.go(AppRoutes.home);
+    } catch (_) {
+      // الإلغاء لم يصل للقاعدة — لا نغادر الشاشة، وإلا بقيت الرحلة
+      // مفتوحة بلا علم الراكب وقد يُعيَّن لها سائق بعد خروجه.
+      if (!mounted) return;
+      setState(() => _isCancelling = false);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(L10n.of(context).cancelRideFailed)),
+        );
     }
   }
 
@@ -164,7 +172,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
                       color: MishwarakColors.primary,
                       boxShadow: [
                         BoxShadow(
-                          color: MishwarakColors.primary.withOpacity(0.4),
+                          color: MishwarakColors.primary.withValues(alpha: 0.4),
                           blurRadius: 32,
                           offset: const Offset(0, 8),
                         ),
@@ -194,7 +202,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
+                    color: Colors.black.withValues(alpha: 0.12),
                     blurRadius: 32,
                     offset: const Offset(0, -8),
                   ),
@@ -240,7 +248,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: MishwarakColors.primary
-                                      .withOpacity(0.3 + 0.7 * wave),
+                                      .withValues(alpha: 0.3 + 0.7 * wave),
                                 ),
                               ),
                             );
@@ -259,7 +267,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
                       style: OutlinedButton.styleFrom(
                         foregroundColor: MishwarakColors.danger,
                         side: BorderSide(
-                          color: MishwarakColors.danger.withOpacity(0.4),
+                          color: MishwarakColors.danger.withValues(alpha: 0.4),
                           width: 1.5,
                         ),
                         shape: RoundedRectangleBorder(

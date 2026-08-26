@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../l10n/app_localizations.dart';
+import 'data/payment_method_repository.dart';
 import 'data/wallet_repository.dart';
 
 class WalletScreen extends ConsumerWidget {
@@ -24,9 +25,14 @@ class WalletScreen extends ConsumerWidget {
         title: Text(l10n.walletTitle),
         centerTitle: false,
         actions: [
-          TextButton(
-            onPressed: () {},
-            child: Text(l10n.history),
+          IconButton(
+            tooltip: l10n.retry,
+            onPressed: () {
+              ref.invalidate(walletBalanceProvider);
+              ref.invalidate(walletTransactionsProvider);
+              ref.invalidate(paymentMethodsProvider);
+            },
+            icon: const Icon(Icons.refresh_rounded),
           ),
         ],
       ),
@@ -41,7 +47,7 @@ class WalletScreen extends ConsumerWidget {
               gradient: MishwarakColors.primaryGradient,
               boxShadow: [
                 BoxShadow(
-                  color: MishwarakColors.primary.withOpacity(0.25),
+                  color: MishwarakColors.primary.withValues(alpha: 0.25),
                   blurRadius: 32,
                   offset: const Offset(0, 12),
                 ),
@@ -104,26 +110,35 @@ class WalletScreen extends ConsumerWidget {
           ),
 
           // ═══ طرق الدفع ═══
+          // البطاقات تأتي من جدول `payment_methods`. كانت هنا بطاقة
+          // فيزا ثابتة في الكود (`•••• 4287`) لا وجود لها في حساب أي
+          // مستخدم — تعرض للراكب وسيلة دفع لا يملكها.
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l10n.paymentMethods, style: theme.textTheme.headlineSmall),
-              TextButton(onPressed: () {}, child: Text('+ ${l10n.add}')),
-            ],
-          ),
+          Text(l10n.paymentMethods, style: theme.textTheme.headlineSmall),
           const SizedBox(height: 10),
           SizedBox(
             height: 90,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: const [
-                _PaymentCard.cash(),
-                SizedBox(width: 10),
-                _PaymentCard.visa(last4: '4287'),
-                SizedBox(width: 10),
-                _PaymentCard.add(),
-              ],
+            child: Consumer(
+              builder: (context, ref, _) {
+                final cards =
+                    ref.watch(paymentMethodsProvider).valueOrNull ?? const [];
+
+                return ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    // النقد متاح دائماً ولا يحتاج تسجيلاً.
+                    const _PaymentCard.cash(),
+                    for (final card in cards) ...[
+                      const SizedBox(width: 10),
+                      _PaymentCard.saved(card),
+                    ],
+                    const SizedBox(width: 10),
+                    _PaymentCard.add(
+                      onTap: () => _snack(context, l10n.topUpComingSoon),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
 
@@ -218,7 +233,7 @@ class _BalanceAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: filled ? Colors.white : Colors.white.withOpacity(0.2),
+      color: filled ? Colors.white : Colors.white.withValues(alpha: 0.2),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -229,7 +244,7 @@ class _BalanceAction extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: filled
                 ? null
-                : Border.all(color: Colors.white.withOpacity(0.35), width: 1.5),
+                : Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.5),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -260,52 +275,67 @@ class _BalanceAction extends StatelessWidget {
 }
 
 // ─────────────── بطاقة طريقة دفع ───────────────
-enum _CardKind { cash, visa, add }
-
 class _PaymentCard extends StatelessWidget {
-  final _CardKind kind;
-  final String? last4;
+  /// بطاقة محفوظة، أو `null` لبطاقتي النقد والإضافة.
+  final SavedPaymentMethod? saved;
 
-  const _PaymentCard._(this.kind, {this.last4});
+  final bool isAdd;
+  final VoidCallback? onTap;
 
-  const _PaymentCard.cash() : this._(_CardKind.cash);
-  const _PaymentCard.visa({required String last4})
-      : this._(_CardKind.visa, last4: last4);
-  const _PaymentCard.add() : this._(_CardKind.add);
+  const _PaymentCard.cash()
+      : saved = null,
+        isAdd = false,
+        onTap = null;
+
+  const _PaymentCard.saved(SavedPaymentMethod card)
+      : saved = card,
+        isAdd = false,
+        onTap = null;
+
+  const _PaymentCard.add({this.onTap})
+      : saved = null,
+        isAdd = true;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = L10n.of(context);
 
-    if (kind == _CardKind.add) {
-      return Container(
-        width: 140,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: theme.dividerColor,
-            width: 2,
-            style: BorderStyle.solid,
+    if (isAdd) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          width: 140,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: theme.dividerColor, width: 2),
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.add, size: 22, color: MishwarakColors.lightTextMuted),
-            const SizedBox(height: 6),
-            Text(
-              L10n.of(context).addCard,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.add,
+                size: 22,
                 color: MishwarakColors.lightTextMuted,
               ),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                l10n.addCard,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: MishwarakColors.lightTextMuted,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    final isCash = kind == _CardKind.cash;
+    final card = saved;
+    final isCash = card == null || card.kind == PaymentKind.cash;
+
     return Container(
       width: 140,
       padding: const EdgeInsets.all(12),
@@ -331,46 +361,42 @@ class _PaymentCard extends StatelessWidget {
                 color: Colors.white,
                 size: 22,
               ),
-              if (!isCash)
-                const Text(
-                  'VISA',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    fontStyle: FontStyle.italic,
+              if (!isCash && card.brand != null)
+                Flexible(
+                  child: Text(
+                    card.brand!.toUpperCase(),
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ),
             ],
           ),
-          if (isCash)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  L10n.of(context).cash,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isCash ? l10n.cash : (card.label ?? '•••• ${card.last4 ?? ''}'),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
                 ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (isCash || card.isDefault)
                 Text(
-                  L10n.of(context).defaultLabel,
+                  l10n.defaultLabel,
                   style: const TextStyle(color: Colors.white70, fontSize: 10),
                 ),
-              ],
-            )
-          else
-            Text(
-              '•••• $last4',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                letterSpacing: 1.5,
-              ),
-            ),
+            ],
+          ),
         ],
       ),
     );
@@ -383,16 +409,14 @@ class _TxnTile extends StatelessWidget {
 
   const _TxnTile({required this.txn});
 
-  /// أيقونة حسب نص الوصف — الجدول لا يخزّن أيقونة.
+  /// أيقونة المعاملة.
+  ///
+  /// المعاملة المرتبطة برحلة معروفة من `ride_id` لا من نصّ وصفها:
+  /// المطابقة على كلمات عربية كانت تفشل صامتةً لكل مستخدم إنجليزي،
+  /// وتفشل مرة أخرى إن غُيّرت صياغة الوصف في الخادم.
   IconData get _icon {
-    final d = txn.description;
-    if (d.contains('رحلة')) return Icons.local_taxi_outlined;
-    if (d.contains('شحن')) return Icons.add_circle_outline;
-    if (d.contains('كوبون') || d.contains('خصم')) {
-      return Icons.local_offer_outlined;
-    }
-    if (d.contains('مكافأة') || d.contains('هدية')) return Icons.card_giftcard;
-    return txn.isCredit ? Icons.arrow_downward : Icons.arrow_upward;
+    if (txn.rideId != null) return Icons.local_taxi_outlined;
+    return txn.isCredit ? Icons.add_circle_outline : Icons.arrow_upward;
   }
 
   @override
@@ -411,7 +435,7 @@ class _TxnTile extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               color: isCredit
-                  ? MishwarakColors.success.withOpacity(0.15)
+                  ? MishwarakColors.success.withValues(alpha: 0.15)
                   : theme.cardColor,
             ),
             child: Icon(
@@ -437,7 +461,7 @@ class _TxnTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  formatDateTimeLabel(txn.createdAt),
+                  formatDateTimeLabel(context, txn.createdAt),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: MishwarakColors.lightTextMuted,
                   ),

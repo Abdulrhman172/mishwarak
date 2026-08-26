@@ -11,11 +11,18 @@
 في لوحة Supabase → **SQL Editor** → **New query**:
 
 1. الصق محتوى [`supabase/schema.sql`](supabase/schema.sql) كاملاً ثم **Run**
-   (الجداول + RLS + المحفّزات + Realtime)
+   (الجداول + RLS + المحفّزات + Realtime + الصلاحيات)
 2. الصق محتوى [`supabase/seed.sql`](supabase/seed.sql) ثم **Run**
-   (أنواع المركبات + كوبون + سائقون تجريبيون)
+   (أنواع المركبات + كوبونات + سائقون تجريبيون)
 
-للتحقق: **Table Editor** يجب أن تظهر 11 جدولاً، و `vehicle_types` فيه 4 صفوف.
+للتحقق: **Table Editor** يجب أن تظهر 12 جدولاً، و `vehicle_types` فيه 4 صفوف.
+
+> ⚠️ **الخطوة 2 ليست اختيارية.**
+> عمود `rides.vehicle_type_id` مرتبط بمفتاح أجنبي إلى `vehicle_types`.
+> إن بقي الجدول فارغاً، يرفض الخادم كل طلب رحلة برسالة انتهاك مفتاح
+> أجنبي — ولا يظهر للراكب إلا "تعذّر الطلب" بلا سبب واضح.
+> وبلا صفوف في `drivers` لن يجد المُوزِّع سائقاً أبداً، فتبقى شاشة
+> البحث تدور حتى تنتهي المهلة.
 
 ### ب. ربط التطبيق
 
@@ -68,24 +75,43 @@
 كلاهما مطلوب: الوسم يحمّل مكتبة الخرائط، و`env.json` يخبر التطبيق أن يعرضها
 بدل الخريطة البديلة.
 
-### إضافة أندرويد / iOS
+### أندرويد و iOS
 
-المنصّتان غير مُنشأتين بعد. لإضافتهما:
+المنصّتان مُنشأتان ومهيّأتان بالأذونات ونصوص طلب الموقع بالعربية.
+لا تكتب المفتاح في أي ملف داخل `android/app/src/main/` أو
+`ios/Runner/` — كلاهما متتبَّع في Git. المكان الصحيح:
 
-```bash
-flutter create --platforms=android,ios .
+**أندرويد** — أضف السطر إلى `android/local.properties` (مُستثنى من Git):
+
+```properties
+MAPS_API_KEY=AIza...
 ```
 
-ثم:
-- **أندرويد** — في `android/app/src/main/AndroidManifest.xml` داخل `<application>`:
-  ```xml
-  <meta-data android:name="com.google.android.geo.API_KEY"
-             android:value="مفتاحك"/>
-  ```
-- **iOS** — في `ios/Runner/AppDelegate.swift`:
-  ```swift
-  GMSServices.provideAPIKey("مفتاحك")
-  ```
+يقرأه `app/build.gradle.kts` ويحقنه في `AndroidManifest.xml` عبر
+`manifestPlaceholders` وقت البناء.
+
+**iOS** — انسخ ملف المثال ثم ضع مفتاحك فيه:
+
+```bash
+cp ios/Flutter/Secrets.xcconfig.example ios/Flutter/Secrets.xcconfig
+```
+
+يقرأه `Info.plist` عبر `$(MAPS_API_KEY)`، ويأخذه `AppDelegate` من
+الحزمة عند الإقلاع. النسخة الحقيقية مُستثناة من Git.
+
+> البناء ينجح بلا مفتاح على المنصّتين — تظهر الخريطة البديلة بدل أن
+> يفشل البناء على جهاز لم يُعدّ بعد.
+
+**قيود المفتاح** (مهمة — المفتاح غير المقيَّد يُستنزف من أي جهة):
+
+| المنصّة | نوع التقييد | القيمة |
+|---|---|---|
+| أندرويد | Android apps | `com.mishwarak.mishwarak` + بصمة SHA-1 |
+| iOS | iOS apps | `com.mishwarak.mishwarak` |
+| الويب | HTTP referrers | نطاق موقعك |
+
+استخدم **مفتاحاً منفصلاً لكل منصّة**؛ لا يمكن تقييد مفتاح واحد
+بثلاثة أنواع في آن.
 
 ---
 
@@ -107,5 +133,6 @@ flutter run -d chrome --dart-define-from-file=env.json
 ## ملاحظات
 
 - **Windows desktop لا يدعم خرائط Google** — استخدم Chrome أو أندرويد/iOS.
-- ملفات `firebase.json` و `firestore.*` بقايا من إعداد سابق ولا يستخدمها
-  التطبيق؛ يمكن حذفها.
+- **البحث الجغرافي** (تحويل نص الوجهة إلى إحداثيات) يعمل على أندرويد
+  و iOS فقط. على الويب تُستخدم العناوين المحفوظة والأخيرة، وتُعرض
+  الأجرة كتقدير حين لا تتوفّر إحداثيات الوجهة.
